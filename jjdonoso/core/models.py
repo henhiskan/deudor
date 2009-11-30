@@ -5,10 +5,9 @@ from django.contrib.auth.models import User
 
 PERFIL_USUARIO = (
     ('0','administrador'),
-    ('1','secretaria'),
-    ('2','procurador'),
-    ('3','receptor'),
-    ('4','cobrador'))
+    ('1','cobranza'),
+    ('2','procurador'))
+
 
 class Usuario(models.Model):
     persona = models.ForeignKey(Persona)
