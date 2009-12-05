@@ -9,12 +9,6 @@ PERFIL_USUARIO = (
     ('2','procurador'))
 
 
-class Usuario(models.Model):
-    persona = models.ForeignKey(Persona)
-    perfil = models.CharField(max_length=1,choices=PERFIL_USUARIO)
-
-
-
 class Persona(models.Model):
     nombres = models.CharField(max_length=80)
     apellidos = models.CharField(max_length=80)
@@ -55,9 +49,13 @@ class Persona(models.Model):
         """
         return  str(self.rut) + '-' + str(self.get_digito_verificador())
 
+class Usuario(models.Model):
+    persona = models.ForeignKey(Persona)
+    perfil = models.CharField(max_length=1,choices=PERFIL_USUARIO)
+
 
 class Codigo(models.Model):
-    id = models.TextField(max_length=60)
+    codigo_id = models.TextField(max_length=60)
     descripcion = models.TextField(max_length=200)
     
 
@@ -78,11 +76,11 @@ class Tribunal(models.Model):
 
 class Ficha(models.Model):
     persona = models.ForeignKey(Persona)
-    rol = models.Textfield(max_length=100)
+    rol = models.TextField(max_length=100)
     carpeta = models.TextField(max_length=50)
-    tribunal = models.foreignKey(Tribunal)
+    tribunal = models.ForeignKey(Tribunal)
 
-    creado_por = models.ForeignKey(Usuario)
+    creado_por = models.ForeignKey(Usuario, related_name='usuario_set')
     fecha_creacion = models.DateTimeField()
 
 
