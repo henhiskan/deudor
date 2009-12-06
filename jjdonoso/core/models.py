@@ -53,11 +53,15 @@ class Usuario(models.Model):
     persona = models.ForeignKey(Persona)
     perfil = models.CharField(max_length=1,choices=PERFIL_USUARIO)
 
+    def __unicode__(self):
+        return self.persona
 
 class Codigo(models.Model):
     codigo_id = models.TextField(max_length=60)
     descripcion = models.TextField(max_length=200)
     
+    def __unicode__(self):
+        return self.descripcion
 
 
 class Tribunal(models.Model):
@@ -72,7 +76,8 @@ class Tribunal(models.Model):
     secretario = models.CharField(max_length=50, blank=True, null=True)
     direccion_secretario = models.CharField(max_length=50,blank=True, null=True)
   
-
+    def __unicode__(self):
+        return self.nombre
 
 class Ficha(models.Model):
     persona = models.ForeignKey(Persona)
@@ -87,6 +92,8 @@ class Ficha(models.Model):
     deuda_inicial = models.IntegerField()
     procurador = models.ForeignKey(Usuario)
 
+    def __unicode__(self):
+        return self.rol
 
 FORMA_PAGO = (
     ('0','efectivo'),
@@ -109,3 +116,5 @@ class Evento(models.Model):
     honorario = models.IntegerField()
     
 
+    def __unicode__(self):
+        return self.descripcion
