@@ -23,7 +23,7 @@ class Persona(models.Model):
     correo = models.EmailField(blank=True,null=True)
 
     def __unicode__(self):
-        return self.nombres.split(' ')[0] + ' ' + self.apellidos
+        return u"%s %s" % (self.nombres, self.apellidos)
 
     def get_digito_verificador(self):
         """
@@ -54,7 +54,7 @@ class Usuario(models.Model):
     perfil = models.CharField(max_length=1,choices=PERFIL_USUARIO)
 
     def __unicode__(self):
-        return self.persona
+        return self.persona.__unicode__()
 
 class Codigo(models.Model):
     codigo_id = models.TextField(max_length=60)
@@ -95,11 +95,20 @@ class Ficha(models.Model):
     def __unicode__(self):
         return self.rol
 
-FORMA_PAGO = (
-    ('0','efectivo'),
-    ('1','cheque'),
-    ('2','deposito'),
-    ('3','valevista'))
+
+class FormaPago(models.Model):
+    codigo = models.IntegerField()
+    nombre = models.TextField(max_length=50)
+
+
+    def __unicode__(self):
+        return self.nombre
+
+#FORMA_PAGO = (
+#    ('0','efectivo'),
+#    ('1','cheque'),
+#    ('2','deposito'),
+#    ('3','valevista'))
 
 
 class Evento(models.Model):
@@ -109,7 +118,8 @@ class Evento(models.Model):
     
     descripcion =  models.TextField(max_length=200)
 
-    forma_pago = models.CharField(max_length=1,choices=FORMA_PAGO)
+    #forma_pago = models.CharField(max_length=1,choices=FORMA_PAGO)
+    forma_pago = models.ForeignKey(FormaPago)
     abono_deuda = models.IntegerField()
 
     gasto_judicial = models.IntegerField()
@@ -118,3 +128,10 @@ class Evento(models.Model):
 
     def __unicode__(self):
         return self.descripcion
+
+class Reporte(models.Model):
+    nombre = models.TextField(max_length=50)
+    sql = models.TextField(max_length=1000)
+
+    def __unicode__(self):
+        return self.nombre

@@ -80,3 +80,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'jjdonoso.core',
 )
+
+SERIALIZATION_MODULES = {
+    'json': 'wadofstuff.django.serializers.json'
+}
