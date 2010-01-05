@@ -104,11 +104,6 @@ class FormaPago(models.Model):
     def __unicode__(self):
         return self.nombre
 
-#FORMA_PAGO = (
-#    ('0','efectivo'),
-#    ('1','cheque'),
-#    ('2','deposito'),
-#    ('3','valevista'))
 
 
 class Evento(models.Model):
@@ -118,7 +113,6 @@ class Evento(models.Model):
     
     descripcion =  models.TextField(max_length=200)
 
-    #forma_pago = models.CharField(max_length=1,choices=FORMA_PAGO)
     forma_pago = models.ForeignKey(FormaPago)
     abono_deuda = models.IntegerField()
 

@@ -29,8 +29,13 @@ var registro_form;
 
 var reporte_form;
 var reporte_win;
+var search;
 
 Ext.onReady(function(){
+
+  Ext.QuickTips.init();
+  // turn on validation errors beside the field globally
+  Ext.form.Field.prototype.msgTarget = 'side';
 
   var combo = new Ext.form.ComboBox({
         store: store,
@@ -52,7 +57,7 @@ Ext.onReady(function(){
 	      win.show();
         },
         iconCls: 'add24',
-	tooltip: ' hola',
+	tooltip: ' Agregar los datos de un nuevo deudor',
 	scale: 'medium'
     });
 
@@ -64,7 +69,7 @@ Ext.onReady(function(){
 	      registro_win.show();
 	  },
 	  iconCls: 'add24',
-	  tooltip:'hola',
+	  tooltip:'Agregar un nuevo registro a un deudor',
 	  scale: 'medium'
       });
 
@@ -74,27 +79,16 @@ Ext.onReady(function(){
   reporte_btn = new Ext.Action({
 	  text: 'Reportes',
 	  handler: function() {
-
-	      reporte_store.load();
-	      tabs.add(reporte_grid);
-
-	      reporte_grid.show();
+	      reporte_store.load();	      
+	      if (tabs.getItem('reportes') == null)
+		  {
+		      tabs.add(reporte_grid);
+		      reporte_grid.show();
+		  }
+	      else{
+		  tabs.unhideTabStripItem('reportes');
+	      }
 	      
-
-	      // Ext.Ajax.request({
-// 			url : 'getreporte' , 
-// 			params : { action : 'getDate' },
-// 			method: 'GET',
-// 			success: function ( result, request) { 
-// 			    //var textArea = Ext.get('log').dom;
-// 			    //textArea.value += result.responseText + "\n"; 
-// 			Ext.MessageBox.alert('Success', 'Data return from the server: '+ result.responseText); 		
-// 			//doJSON(result.responseText);
-// 			},
-// 			failure: function ( result, request) { 
-// 				Ext.MessageBox.alert('Failed', 'Successfully posted form: '+result.date); 
-// 			} 
-// 		  });
 	  },
 	  
 	  iconCls: 'add24',
@@ -105,7 +99,60 @@ Ext.onReady(function(){
 
 
 
-////////////////////////////////////////////////////////////
+///////////////////////////////////////////
+//////////// STORES          //////////////
+
+
+  ficha_store = new Ext.data.Store({
+	  proxy: new Ext.data.HttpProxy({
+		  url: '/jjdonoso/getficha',
+		  method: 'GET'
+	      }),
+	    
+	  reader: new Ext.data.JsonReader({
+		  root: 'results',
+		  totalProperty: 'total',
+		  id:'pk'
+		    
+	      }, [
+  {name: 'fecha', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.fecha_creacion'},
+  {name: 'persona',type:'string',mapping:'fields.persona.fields.nombres'},
+  {name: 'rut',type:'string',mapping:'fields.persona.fields.rut'},
+  {name: 'rol',type:'string',mapping:'fields.rol'},
+  {name: 'carpeta',  type:'string',  mapping:'fields.carpeta'},
+  {name: 'tribunal', type:'string', mapping:'fields.tribunal.fields.nombre'},
+  {name: 'creado_por', type:'string', mapping:'fields.creado_por.fields.persona.fields.nombres'},
+  {name: 'deuda_inicial',type:'int',mapping:'fields.deuda_inicial'},
+  {name: 'procurador',type:'string',mapping:'fields.procurador.fields.persona.fields.nombres'}
+		  ])
+      });
+
+
+  evento_store = new Ext.data.Store({
+	  
+	  proxy: new Ext.data.HttpProxy({
+		  url: '/jjdonoso/getevento',
+		  method: 'GET'
+	      }),
+	    
+	  reader: new Ext.data.JsonReader({
+		  root: 'results',
+		  totalProperty: 'total',
+		  id:'pk'
+		  
+           }, [
+  {name: 'fecha', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.fecha'},
+  {name: 'codigo',type:'string',mapping:'fields.codigo.fields.descripcion'},
+  {name: 'descripcion',type:'string',mapping:'fields.descripcion'},
+  {name: 'pago',  type:'string',  mapping:'fields.forma_pago'},
+  {name: 'abono', type:'int', mapping:'fields.abono_deuda'},
+  {name: 'gasto', type:'int', mapping:'fields.gasto_judicial'},
+  {name: 'honorario',type:'int',mapping:'fields.honorario'}
+	       ])
+      });
+
+
+
 
   procurador_store = new Ext.data.Store({
 	  proxy: new Ext.data.HttpProxy({
@@ -190,69 +237,41 @@ Ext.onReady(function(){
 
   ////////////////////////////////////////
 
-    tb = new Ext.Toolbar();
+  
 
-    tb.add(
-	   nuevo_deudor_btn, nuevo_registro_btn, reporte_btn, combo
-	);
-    
-    // create the Data Store
-    store = new Ext.data.Store({
+  
 
-	    proxy: new Ext.data.HttpProxy({
-		    url: '/jjdonoso/getevento',
-		    method: 'GET'
-		}),
-	    
-	    reader: new Ext.data.JsonReader({
-		    root: 'results',
-		    totalProperty: 'total',
-		    id:'pk'
-		    
-           }, [
-    {name: 'fecha', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.fecha'},
-    {name: 'codigo',type:'string',mapping:'fields.codigo.fields.descripcion'},
-    {name: 'descripcion',type:'string',mapping:'fields.descripcion'},
-    {name: 'pago',  type:'string',  mapping:'fields.forma_pago'},
-    {name: 'abono', type:'int', mapping:'fields.abono_deuda'},
-    {name: 'gasto', type:'int', mapping:'fields.gasto_judicial'},
-    {name: 'honorario',type:'int',mapping:'fields.honorario'}
-	       ])
+    ///////////////////////////////////
+    //           GRIDS
+    ///////////////////////////////////
+
+    // Deudores
+    ficha_grid = new Ext.grid.GridPanel({
+	    store: ficha_store,
+	    height: '200',
+	    title: 'Deudores',
+	    columns: [
+    {header: "Fecha", width: 20, dataIndex: 'fecha', sortable: true, renderer: Ext.util.Format.dateRenderer('d/m/Y')},
+    {header: "Persona", width: 40, dataIndex: 'persona', sortable: true},
+    {header: "Rut", width: 25, dataIndex: 'rut', sortable: true},
+    {header: "Rol", width: 30, dataIndex: 'rol', sortable: true},
+    {header: "Carpeta", width: 40, dataIndex: 'carpeta', sortable: true},
+    {header: "Tribunal", width: 50, dataIndex: 'tribunal', sortable: true},
+    {header: "Creado por", width: 40, dataIndex: 'creado_por', sortable: true},
+    {header: "Deuda Inicial", width: 40, dataIndex: 'deuda_inicial', sortable: true},
+    {header: "Procurador", width: 40, dataIndex: 'procurador', sortable: true}
+        ],
+		sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
+		viewConfig: {
+			forceFit: true
+		},
+	region: 'center'
 	});
 
 
-
-    ficha_store = new Ext.data.Store({
-	    proxy: new Ext.data.HttpProxy({
-		    url: '/jjdonoso/getficha',
-		    method: 'GET'
-		}),
-	    
-	    reader: new Ext.data.JsonReader({
-		    root: 'results',
-		    totalProperty: 'total',
-		    id:'pk'
-		    
-           }, [
-    {name: 'fecha', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.fecha_creacion'},
-    {name: 'persona',type:'string',mapping:'fields.persona.fields.nombres'},
-    {name: 'rut',type:'string',mapping:'fields.persona.fields.rut'},
-    {name: 'rol',type:'string',mapping:'fields.rol'},
-    {name: 'carpeta',  type:'string',  mapping:'fields.carpeta'},
-    {name: 'tribunal', type:'string', mapping:'fields.tribunal.fields.nombre'},
-    {name: 'creado_por', type:'string', mapping:'fields.creado_por.fields.persona.fields.nombres'},
-    {name: 'deuda_inicial',type:'int',mapping:'fields.deuda_inicial'},
-    {name: 'procurador',type:'string',mapping:'fields.procurador.fields.persona.fields.nombres'}
-	       ])
-	});
-
-
-
-
-
-    // Grilla con ficha
+    // Eventos deudor
      grid = new Ext.grid.GridPanel({
-	     store: store,
+	     store: evento_store,
 	     height: '200',
 	     title: 'Eventos Deudor',
 
@@ -274,35 +293,12 @@ Ext.onReady(function(){
 	});
 
 
-     ficha_grid = new Ext.grid.GridPanel({
-	     store: ficha_store,
-	     height: '200',
-	     title: 'Deudores',
-	     closable:true,
-        columns: [
-     {header: "Fecha", width: 40, dataIndex: 'fecha', sortable: true, renderer: Ext.util.Format.dateRenderer('d/m/Y')},
-   {header: "Persona", width: 20, dataIndex: 'persona', sortable: true},
-   {header: "Rut", width: 20, dataIndex: 'rut', sortable: true},
-   {header: "Rol", width: 40, dataIndex: 'rol', sortable: true},
-   {header: "Carpeta", width: 40, dataIndex: 'carpeta', sortable: true},
-   {header: "Tribunal", width: 40, dataIndex: 'tribunal', sortable: true},
-   {header: "Creado por", width: 40, dataIndex: 'creado_por', sortable: true},
-     {header: "Deuda Inicial", width: 40, dataIndex: 'deuda_inicial', sortable: true},
-   {header: "Procurador", width: 40, dataIndex: 'procurador', sortable: true}
-        ],
-		sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
-		viewConfig: {
-			forceFit: true
-		},
-	region: 'center'
-	});
-
 
      reporte_grid = new Ext.grid.GridPanel({
+	     id: 'reportes',
 	     store: reporte_store,
 	     height: '200',
 	     title: 'Reportes',
-	     closable: true,
         columns: [
    {header: "Nombre", width: 50, dataIndex: 'nombre', sortable: true}
         ],
@@ -314,44 +310,45 @@ Ext.onReady(function(){
 	});
 
 
-     //////////////////////////////////////////////////
-     ////  Tabs  /////
+////////////////////////////
+////  Tabs  ///////////////
 
 
-      tabs = new Ext.TabPanel({
-        width:450,
-        activeTab: 0,
-        frame:true,
-	region:'center',
-        items:[
-	       ficha_grid,
-	       grid 
-	       ]
+     tabs = new Ext.TabPanel({
+	     width:450,
+	     activeTab: 0,
+	     frame:true,
+	     region:'center',
+	     items:[
+		    ficha_grid,
+		    grid 
+		    ]
+	 });
+     // en cada cambio de Tab, cambio el datastore
+     // del buscador para el filtro
+     tabs.on('tabchange', function(){
+	     search.store = tabs.activeTab.store;
+	 }); 
 
-    });
 
+//////////////////////////////////////////////////
+///// SEARCH Toolbar     
 
-
-
-
-
-     var search = new Ext.FormPanel({
-	     frame: true,
-	     title: "Busqueda de Registro",
-	     region: 'west',
-	     width: '250',
-	     align: 'top',
-	     items: [{xtype: 'textfield',
-		      fieldLabel: 'busqueda',
-		      name: 'Busqueda'
-		 }],
-	     buttons: [{
-		     text: 'Buscar'
-		 }]
+     search = new Ext.ux.form.SearchField({
+	     store: ficha_store,
+	     width:320
 	 });
 
+     tb = new Ext.Toolbar();
 
-////////////////////////////////////////////////////////////
+     tb.add(
+	    nuevo_deudor_btn, nuevo_registro_btn, reporte_btn,
+	    'busqueda: ',' ',
+	    search
+	    );
+    
+    
+///////////////////////////////////
 /////////// Formularios ///////////
 
     reporte_form = new Ext.FormPanel({
@@ -390,7 +387,7 @@ Ext.onReady(function(){
 			
         },{
 		    text: 'Cancelar',
-		    //handler: function(){registro_win.close();}
+		    handler: function(){win.hide();}
 		    
         }]
 	});
@@ -410,8 +407,9 @@ Ext.onReady(function(){
                 items: [
 			new Ext.form.DateField({
                         fieldLabel: 'Fecha',
-                        name: 'fecha'
-
+                        name: 'fecha',
+			format: 'd/m/Y',
+			value: (new Date()).format('d/m/Y')
 			    }),
 			new Ext.form.ComboBox({
 				hiddenName: 'codigo',
@@ -488,6 +486,9 @@ Ext.onReady(function(){
 			     url:'putevento',
 			     success: function(){
 				  Ext.MessageBox.alert('Exitoso', 'Datos enviados');
+				  registro_form.getForm().reset();
+				  registro_win.hide();
+				  evento_store.load();
 				   }})
 			       }
 			else{
@@ -497,15 +498,17 @@ Ext.onReady(function(){
 			
         },{
 		    text: 'Cancelar',
-		    //handler: function(){registro_win.close();}
+		    handler: function(){registro_win.hide();}
 		    
         }]
     });
 
      ////////////////////////////////////////////////////
      // Nuevo Deudor
+    
+
      deudor_form = new Ext.FormPanel({
-        labelAlign: 'right',
+	labelAlign: 'right',
         frame:true,
 	buttonAlign: 'center',
 	layout: 'column',
@@ -513,38 +516,61 @@ Ext.onReady(function(){
 	     layout:'form',
 	     xtype: 'fieldset',
 	     title: 'Datos deudor',
+	     width: 340,
 	     items:[
-
-		     new Ext.form.TextField({
-			     fieldLabel: 'Rut',
-			     name: 'rut',
-			     allowBlank:false
-			 }),
-		     new Ext.form.TextField({
-			     fieldLabel: 'Nombres',
-			     name: 'nombres',
-			     allowBlank:false
-			 }),
-		     new Ext.form.TextField({
-			     fieldLabel: 'Apellidos',
-			     name: 'apellidos',
-			     allowBlank:false
-			 }),
-		     new Ext.form.NumberField({
-			     fieldLabel: 'Telefono Fijo',
-			     name: 'telefono_fijo'
-			 }),
-		     new Ext.form.NumberField({
-			     fieldLabel: 'Telefono movil',
-			     name: 'telefono_movil'
-			 }),
-		     new Ext.form.TextArea({
-			     fieldLabel: 'Domicilio',
-			     name: 'domicilio',
-			     grow: true,
-			     preventScrollbars: true
-			 })]
-		 },{
+    		{
+		    fieldLabel: 'Rut',
+		    name: 'rut',
+		    xtype: 'textfield',
+		    vtype: 'Rut',
+		    allowBlank: true,
+		    maskRe: new RegExp ('[0-9kK]'),
+		    enableKeyEvents: true,
+		    listeners: {
+			'keyup': function(field, e) {
+			    var rut =
+			    field.getValue().replace(/[.-]/g,'').split('').reverse();
+			    if (rut.length>0){
+				var rut_array=[rut[0],'-'];
+				var cont=0;
+				for(i=1;i<rut.length;i++){
+				    if (cont==3){
+					rut_array.push('.');
+					cont=0;
+				    }
+				    rut_array.push(rut[i]);
+				    cont++;
+				}
+				this.setValue(rut_array.reverse().join(''));
+			    }}
+		    }// end listeners
+    
+		},
+		new Ext.form.TextField({
+			fieldLabel: 'Nombres',
+			name: 'nombres',
+			allowBlank:false
+		    }),
+		new Ext.form.TextField({
+			fieldLabel: 'Apellidos',
+			name: 'apellidos',
+			allowBlank:false
+		    }),
+		new Ext.form.NumberField({
+			fieldLabel: 'Telefono Fijo',
+			name: 'telefono_fijo'
+		    }),
+		new Ext.form.NumberField({
+			fieldLabel: 'Telefono movil',
+			name: 'telefono_movil'
+		    }),
+		new Ext.form.TextArea({
+			fieldLabel: 'Domicilio',
+			name: 'domicilio',
+			grow: true,
+			preventScrollbars: true
+		    })]
+	    },{
 	      layout:'form',
 	      xtype: 'fieldset',
 	      title: 'Datos Ficha',
@@ -558,7 +584,9 @@ Ext.onReady(function(){
 		     new Ext.form.DateField({
 			     fieldLabel: 'Fecha creacion',
 			     name: 'fecha_creacion',
-			     allowBlank:false
+			     allowBlank:false,
+			     format: 'd/m/Y',
+			     value: (new Date()).format('d/m/Y')
 			 })]
 
 		 },{
@@ -621,6 +649,9 @@ Ext.onReady(function(){
 			     url:'putdeudor',
 			     success: function(){
 				  Ext.MessageBox.alert('Exitoso', 'Datos enviados');
+				  deudor_form.getForm().reset();
+				  win.hide();
+				  ficha_store.load();
 				   }})
 			       }
 			else{
@@ -629,7 +660,7 @@ Ext.onReady(function(){
 		     }
 		 },{
 		     text: 'Cancelar',
-		     //handler: function(){win.close();}
+		     handler: function(){win.hide();}
 		 }]
 	 });
 
@@ -700,16 +731,6 @@ Ext.onReady(function(){
 		items: [
 			tabs
 			
-			//			{
-			//	id: 'detailPanel',
-			//	region: 'east',
-			//	width: 200,
-			//	bodyStyle: {
-			//		background: '#ffffff',
-			//		padding: '47px'
-			//	},
-			//	html: '.'
-			//}
 		]
 	    });
 
@@ -718,7 +739,8 @@ Ext.onReady(function(){
 		//bookTpl.overwrite(detailPanel.body, r.data);
 		grid.enable();
 		nuevo_registro_btn.enable();
-		store.load({params:{rut:r.data.rut}});
+		evento_store.baseParams = {rut: r.data.rut};
+		evento_store.load();
 		grid.show();
 
 		// Agregar rut de deudor en formulario de 

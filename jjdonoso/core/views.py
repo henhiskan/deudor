@@ -3,8 +3,9 @@ from django.contrib.auth.decorators import user_passes_test
 from django.template import Context, loader
 
 from django.core import serializers
-from django.forms import ModelForm
 
+from django import forms
+from django.db.models import Q
 from django.db import connection
 
 from jjdonoso.core.models import *
@@ -15,8 +16,6 @@ import csv
 
 login_needed = user_passes_test(lambda u: not u.is_anonymous(), login_url='/jjdonoso/login/')
   
-
-
 def Serialize(queryset, root_name=None):
 
     if not root_name:
@@ -36,6 +35,7 @@ def main(request):
 
 
 
+
 def ficha(request):
     
     t = loader.get_template('ficha.html')
@@ -48,14 +48,43 @@ def ficha(request):
 def getEvento(request):
 
     if request.method == "GET":
-        if 'rut' in request.GET.keys():
+        rut = request.GET.get('rut',False)
+        if rut:
             #Busqueda de persona
-            rut = request.GET['rut']
             persona = Persona.objects.filter(rut=rut)
-            #@TODO: Ver si el usuario se encontro
-            ficha = Ficha.objects.filter(persona=persona)[0]
-
+            #Solo si se encontro la persona
+            if persona.count() <= 0:
+                return HttpResponse('({"total":0,'\
+                            '"results":False})',  mimetype="text/plain", content_type="application/json")
+                
+            #@TODO: Solo tomara la primera persona que calce con rut,
+            # Que pasa si existe mas de una persona con mismo rut?
+            # Debiese el sistema permitir esto?
+            persona = persona[0]
+            #Buscar ficha y luego eventos
+            ficha = Ficha.objects.filter(persona=persona)
+            if ficha.count() == 0:
+                return HttpResponse('({"total":0,'\
+                            '"results":False})',  mimetype="text/plain", content_type="application/json")
+            
+            ficha = ficha[0]
             registro = Evento.objects.filter(ficha=ficha)
+
+            #Ver si es que fueron enviados datos para el filtrado
+            # de eventos
+
+            query = request.GET.get('query',False)
+            if query:
+                filtro = Q(descripcion__icontains=query)
+                filtro = filtro|Q(codigo__descripcion__icontains=query)
+
+                # Si la query es numero entonces puede 
+                # ser que quieran filtrar por codigo
+                if query.isdigit():
+                    filtro = filtro|Q(abono_deuda=query)
+
+                registro = registro.filter( filtro)
+
 
             data = '({ total: %d, "results": %s })' % \
                 (registro.count(),
@@ -67,24 +96,30 @@ def getEvento(request):
             return HttpResponse(data, content_type='application/json')
 
 
-            #return HttpResponse(Serialize(ficha, root_name='fichas'), mimetype='text/javascript', content_type="application/json") 
-
-        
-
 
         else:
-            return HttpResponse('({"total":3,'\
-                            '"results":[{"fecha":"2009/12/01","codigo":"23","descripcion":"empiea la deuda","pago":"contado","abono":"2121","gasto":"121","honorario":"1212"},{"fecha":"2009/11/21","codigo":"13","descripcion":"sigue la deuda","pago":"contado","abono":"55421","gasto":"54545","honorario":"323223"},{"fecha":"2009/11/11","codigo":"66","descripcion":"termina la deuda","pago":"contado","abono":"2121","gasto":"121","honorario":"1212"}]})',  mimetype="text/plain", content_type="application/json")
+            return HttpResponse('({"total":0,'\
+                            '"results":[]})',  mimetype="text/plain", content_type="application/json")
 
 
 def getFicha(request):
-
+    
+    query = request.GET.get('query',False)
     
 
+    if query:
+        filtro = Q(persona__nombres__icontains=query)
+        filtro = filtro|Q(persona__apellidos__icontains=query)
+        filtro = filtro|Q(persona__rut__icontains=query)
+        filtro = filtro|Q(rol__icontains=query)        
+        fichas = Ficha.objects.filter(filtro)
+    else:
+        fichas = Ficha.objects.all()
+
     data = '({ total: %d, "results": %s })' % \
-        (Ficha.objects.count(),
+        (fichas.count(),
          serializers.serialize('json', 
-                               Ficha.objects.all(), 
+                               fichas, 
                                indent=4, 
                                relations=({'procurador':{'relations':('persona',)},'tribunal':{},'persona':{},'creado_por':{'relations':('persona',)}})))
 
@@ -148,17 +183,9 @@ def buscar(request):
         Persona.objects.filter(nombre__icontains=key)
         
         
+class EventoForm(forms.ModelForm):
+    fecha = forms.DateField(input_formats=['%d/%m/%Y'],error_messages={'invalid': 'Fecha invalida','required':'Campo Obligatorio'})
 
-
-def nuevoDeudor(request):
-    """" Almacena los datos del deudor """
-    if request.method == "POST":
-        #toma datos de persona
-        nombre = request.POST['nombre']
-        rut = request.POST['rut']
-
-
-class EventoForm(ModelForm):
     class Meta:
         model = Evento
         exclude = ('ficha','codigo','forma_pago')
@@ -190,14 +217,30 @@ def putEvento(request):
 
         else:
             
-            return HttpResponse("Errores")
+            return HttpResponse(event_form.errors)
         
 
-class PersonaForm(ModelForm):
+class PersonaForm(forms.ModelForm):
+    rut  = forms.CharField(required=False)
+
     class Meta:
         model = Persona
 
-class FichaForm(ModelForm):
+    def clean_rut(self):
+        rut = self.cleaned_data['rut']
+
+        #Sacar el digito verificador
+        if len(rut.split('-')) == 2:
+            rut = rut.split('-')[0]
+        rut = rut.replace('.','')
+
+        return int(rut)
+        
+
+class FichaForm(forms.ModelForm):
+    fecha_creacion = forms.DateField(input_formats=['%d/%m/%Y'],error_messages={'invalid': 'Fecha invalida','required':'Campo Obligatorio'})
+
+
     class Meta:
         model = Ficha
         exclude = ('persona','creado_por','tribunal','procurador')
@@ -207,9 +250,11 @@ def putDeudor(request):
     if request.method == "POST":
 
         persona_form = PersonaForm(request.POST)
-        persona = persona_form.save()
-        
-        #return HttpResponse(persona.id)
+        if persona_form.is_valid():
+            persona = persona_form.save()
+        else:
+            return HttpResponse(persona_form.errors)
+
 
         #busqueda del tribunal
         tribunal = Tribunal.objects.get(nombre=request.POST['trib'])
@@ -218,7 +263,10 @@ def putDeudor(request):
         procurador = Usuario.objects.get(persona__rut = request.POST['proc_rut'])
 
         ficha_form = FichaForm(request.POST)
-        ficha = ficha_form.save(commit=False)
+        if ficha_form.is_valid():
+            ficha = ficha_form.save(commit=False)
+        else:
+            return HttpResponse(ficha_form.errors)
 
         ficha.persona = persona
 
@@ -240,7 +288,6 @@ def getReporte(request):
         
         reporte = Reporte.objects.get(nombre= request.POST['nombre'])
 
-        #conn = psycopg2.connect("dbname='jjdonoso' user='jjdonoso' host='localhost' password='jjdonoso!'");
         cur = connection.cursor()
         
         cur.execute(reporte.sql)
