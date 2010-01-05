@@ -1,4 +1,5 @@
-# Django settings for jjdonoso project.
+# Django settings for deudor project.
+import os
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -28,6 +29,8 @@ TIME_ZONE = 'America/Chicago'
 LANGUAGE_CODE = 'en-us'
 
 SITE_ID = 1
+
+SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -63,14 +66,16 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 )
 
-ROOT_URLCONF = 'jjdonoso.urls'
+ROOT_URLCONF = 'urls'
 
-TEMPLATE_DIRS = (
+#TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    "/home/rrossel/Projects/jjdonoso/jjdonoso/core/templates"
-)
+#    "/home/rrossel/Projects/jjdonoso/jjdonoso/core/templates"
+#)
+
+TEMPLATE_DIRS = ( os.path.join(SITE_ROOT, 'core/templates'),)
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -78,7 +83,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
-    'jjdonoso.core',
+    'core',
 )
 
 SERIALIZATION_MODULES = {

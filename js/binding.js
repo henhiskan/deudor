@@ -105,7 +105,7 @@ Ext.onReady(function(){
 
   ficha_store = new Ext.data.Store({
 	  proxy: new Ext.data.HttpProxy({
-		  url: '/jjdonoso/getficha',
+		  url: '/deudor/getficha',
 		  method: 'GET'
 	      }),
 	    
@@ -131,7 +131,7 @@ Ext.onReady(function(){
   evento_store = new Ext.data.Store({
 	  
 	  proxy: new Ext.data.HttpProxy({
-		  url: '/jjdonoso/getevento',
+		  url: '/deudor/getevento',
 		  method: 'GET'
 	      }),
 	    
@@ -156,7 +156,7 @@ Ext.onReady(function(){
 
   procurador_store = new Ext.data.Store({
 	  proxy: new Ext.data.HttpProxy({
-		  url:'/jjdonoso/getprocuradores',
+		  url:'/deudor/getprocuradores',
 		  method: 'GET'
 	      }),
 	  reader: new Ext.data.JsonReader({
@@ -173,7 +173,7 @@ Ext.onReady(function(){
 
   codigo_store = new Ext.data.Store({
 	  proxy: new Ext.data.HttpProxy({
-		  url: '/jjdonoso/getcodigos',
+		  url: '/deudor/getcodigos',
 		  method: 'GET'
 	      }),
 	  reader: new Ext.data.JsonReader({
@@ -189,7 +189,7 @@ Ext.onReady(function(){
 
   formapago_store = new Ext.data.Store({
 	  proxy: new Ext.data.HttpProxy({
-		  url: '/jjdonoso/getformapago',
+		  url: '/deudor/getformapago',
 		  method: 'GET'
 	      }),
 	  reader: new Ext.data.JsonReader({
@@ -205,7 +205,7 @@ Ext.onReady(function(){
 
   tribunal_store = new Ext.data.Store({
 	  proxy: new Ext.data.HttpProxy({
-		  url: '/jjdonoso/gettribunales',
+		  url: '/deudor/gettribunales',
 		  method: 'GET'
 	      }),
 	  reader: new Ext.data.JsonReader({
@@ -221,7 +221,7 @@ Ext.onReady(function(){
 
   reporte_store = new Ext.data.Store({
 	  proxy: new Ext.data.HttpProxy({
-		  url: '/jjdonoso/getreporte',
+		  url: '/deudor/getreporte',
 		  method: 'GET'
 	      }),
 	  reader: new Ext.data.JsonReader({
@@ -723,7 +723,7 @@ Ext.onReady(function(){
 	var ct = new Ext.Panel({
 		renderTo: 'areadata',
 		frame: true,
-		title: 'Sistema de Deuda JJDonoso',
+		title: 'Sistema de Deuda',
 		width: 840,
 		height: 600,
 		layout: 'border',

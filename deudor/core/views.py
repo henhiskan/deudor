@@ -8,7 +8,7 @@ from django import forms
 from django.db.models import Q
 from django.db import connection
 
-from jjdonoso.core.models import *
+from core.models import *
 
 import pyExcelerator
 import tempfile
