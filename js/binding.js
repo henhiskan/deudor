@@ -68,7 +68,7 @@ Ext.onReady(function(){
 	  handler: function(){
 	      registro_win.show();
 	  },
-	  iconCls: 'add24',
+	  iconCls: 'registro',
 	  tooltip:'Agregar un nuevo registro a un deudor',
 	  scale: 'medium'
       });
@@ -91,7 +91,7 @@ Ext.onReady(function(){
 	      
 	  },
 	  
-	  iconCls: 'add24',
+	  iconCls: 'reporte',
 	  tooltip:'reporte',
 	  scale: 'medium'
       });
@@ -343,7 +343,7 @@ Ext.onReady(function(){
 
      tb.add(
 	    nuevo_deudor_btn, nuevo_registro_btn, reporte_btn,
-	    'busqueda: ',' ',
+	    'Busqueda: ',' ',
 	    search
 	    );
     
