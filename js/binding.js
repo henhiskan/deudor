@@ -117,13 +117,14 @@ Ext.onReady(function(){
 	      }, [
   {name: 'fecha', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.fecha_creacion'},
   {name: 'persona',type:'string',mapping:'fields.persona.fields.nombres'},
-  {name: 'rut',type:'string',mapping:'fields.persona.fields.rut'},
+  {name: 'rut',type:'string',mapping:'fields.persona.pk'},
   {name: 'rol',type:'string',mapping:'fields.rol'},
   {name: 'carpeta',  type:'string',  mapping:'fields.carpeta'},
-  {name: 'tribunal', type:'string', mapping:'fields.tribunal.fields.nombre'},
-  {name: 'creado_por', type:'string', mapping:'fields.creado_por.fields.persona.fields.nombres'},
+  // {name: 'tribunal', type:'string', mapping:'fields.tribunal.fields.nombre', convert: function(v) {return v ? v : null;}},
+ {name: 'tribunal', type:'string', mapping:'fields.tribunal', convert: function(v) {return v ? v.fields.nombre : null;}},
+  //{name: 'creado_por', type:'string', mapping:'fields.creado_por.fields.persona.fields.nombres'},
   {name: 'deuda_inicial',type:'int',mapping:'fields.deuda_inicial'},
-  {name: 'procurador',type:'string',mapping:'fields.procurador.fields.persona.fields.nombres'}
+  // {name: 'procurador',type:'string',mapping:'fields.procurador.fields.persona.fields.nombres'}
 		  ])
       });
 
@@ -166,7 +167,7 @@ Ext.onReady(function(){
 	      },[
   {name: 'nombres', type: 'string', mapping:'fields.nombres'},
   {name: 'apellidos', type: 'string', mapping:'fields.apellidos'},
-  {name: 'rut', type: 'string', mapping:'fields.rut'}
+  {name: 'rut', type: 'string', mapping:'pk'}
 		 ])
       });
 
@@ -568,6 +569,7 @@ Ext.onReady(function(){
 			fieldLabel: 'Domicilio',
 			name: 'domicilio',
 			grow: true,
+			width: 155,
 			preventScrollbars: true
 		    })]
 	    },{

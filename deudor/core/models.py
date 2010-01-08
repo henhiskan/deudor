@@ -12,7 +12,7 @@ PERFIL_USUARIO = (
 class Persona(models.Model):
     nombres = models.CharField(max_length=80)
     apellidos = models.CharField(max_length=80)
-    rut = models.IntegerField(null=True, blank = True)
+    rut = models.IntegerField(primary_key=True )
     domicilio = models.CharField(max_length=150, null=True, blank = True)
     comuna = models.CharField(max_length=100, null=True, blank = True)
     ciudad = models.CharField(max_length=100, null=True, blank = True)
@@ -63,7 +63,6 @@ class Codigo(models.Model):
     def __unicode__(self):
         return self.descripcion
 
-
 class Tribunal(models.Model):
     nombre = models.CharField(max_length=100)
     nombre_juez = models.CharField(max_length=50, blank=True, null=True)
@@ -79,22 +78,30 @@ class Tribunal(models.Model):
     def __unicode__(self):
         return self.nombre
 
+    class Meta:
+        verbose_name_plural = 'tribunales'
+
+
 class Ficha(models.Model):
     persona = models.ForeignKey(Persona)
     rol = models.TextField(max_length=100)
-    carpeta = models.TextField(max_length=50)
-    tribunal = models.ForeignKey(Tribunal)
+    carpeta = models.TextField(max_length=50, blank=True, null=True)
+    tribunal = models.ForeignKey(Tribunal , blank=True, null=True)
 
-    creado_por = models.ForeignKey(Usuario, related_name='usuario_set')
-    fecha_creacion = models.DateTimeField()
+    creado_por = models.ForeignKey(Usuario, related_name='usuario_set',blank=True, null=True)
+    fecha_creacion = models.DateTimeField(blank=True, null=True)
 
 
-    deuda_inicial = models.IntegerField()
-    procurador = models.ForeignKey(Usuario)
+    deuda_inicial = models.IntegerField(blank=True, null=True)
+    procurador = models.ForeignKey(Usuario, blank=True, null=True)
 
+    
     def __unicode__(self):
-        return self.rol
-
+        if self.rol:
+            return self.rol
+        else:
+            return self.persona.__unicode__()
+    
 
 class FormaPago(models.Model):
     codigo = models.IntegerField()
