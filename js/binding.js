@@ -116,15 +116,15 @@ Ext.onReady(function(){
 		    
 	      }, [
   {name: 'fecha', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.fecha_creacion'},
-  {name: 'persona',type:'string',mapping:'fields.persona.fields.nombres'},
+  {name: 'nombres',type:'string',mapping:'fields.persona.fields.nombres'},
+  {name: 'apellidos',type:'string',mapping:'fields.persona.fields.apellidos'},
   {name: 'rut',type:'string',mapping:'fields.persona.pk'},
   {name: 'rol',type:'string',mapping:'fields.rol'},
   {name: 'carpeta',  type:'string',  mapping:'fields.carpeta'},
-  // {name: 'tribunal', type:'string', mapping:'fields.tribunal.fields.nombre', convert: function(v) {return v ? v : null;}},
- {name: 'tribunal', type:'string', mapping:'fields.tribunal', convert: function(v) {return v ? v.fields.nombre : null;}},
-  //{name: 'creado_por', type:'string', mapping:'fields.creado_por.fields.persona.fields.nombres'},
+  {name: 'tribunal', type:'string', mapping:'fields.tribunal', convert: function(v) {return v ? v.fields.nombre : null;}},
+  {name: 'creado_por', type:'string', mapping:'fields.creado_por', convert: function(v){return v ? v.fields.persona.fields.nombres: null;}},
   {name: 'deuda_inicial',type:'int',mapping:'fields.deuda_inicial'},
-  // {name: 'procurador',type:'string',mapping:'fields.procurador.fields.persona.fields.nombres'}
+  {name: 'procurador',type:'string',mapping:'fields.procurador', convert: function(v){return v ? v.fields.persona.fields.nombres: null;}}
 		  ])
       });
 
@@ -247,17 +247,51 @@ Ext.onReady(function(){
     ///////////////////////////////////
 
     // Deudores
-    ficha_grid = new Ext.grid.GridPanel({
+    ficha_grid = new Ext.grid.EditorGridPanel({
 	    store: ficha_store,
 	    height: '200',
 	    title: 'Deudores',
+	    clicksToEdit: 1,
+
 	    columns: [
     {header: "Fecha", width: 20, dataIndex: 'fecha', sortable: true, renderer: Ext.util.Format.dateRenderer('d/m/Y')},
-    {header: "Persona", width: 40, dataIndex: 'persona', sortable: true},
+    {header: "Nombres", width: 40, dataIndex: 'nombres', sortable: true},
+    {header: "Apellidos", width: 40, dataIndex: 'apellidos', sortable: true},
     {header: "Rut", width: 25, dataIndex: 'rut', sortable: true},
     {header: "Rol", width: 30, dataIndex: 'rol', sortable: true},
     {header: "Carpeta", width: 40, dataIndex: 'carpeta', sortable: true},
-    {header: "Tribunal", width: 50, dataIndex: 'tribunal', sortable: true},
+    {header: "Tribunal", 
+     width: 50, 
+     dataIndex: 'tribunal', 
+     sortable: true,
+     editor: new Ext.form.ComboBox({
+                    typeAhead: true,
+                    triggerAction: 'all',
+                    // transform the data already specified in html
+                    //transform: 'tribunal',
+                    lazyRender: true,
+		    store: tribunal_store
+
+                })
+
+//      editor: new Ext.form.ComboBox({
+// 	     typeAhead: true,
+// 	     triggerAction: 'all',
+// 	     id:'procurador',
+// 	     store: procurador_store,
+// 	     fieldLabel: 'Procurador',
+// 	     displayField: 'nombres',
+// 	     valueField: 'rut',
+// 	     emptyText: 'Seleccione un procurador',
+// 	     mode:'local',
+// 	     minChars: 0,
+// 	     name: 'procurador',
+// 	     triggerAction: 'all'
+// 	 })
+     
+
+
+    },
     {header: "Creado por", width: 40, dataIndex: 'creado_por', sortable: true},
     {header: "Deuda Inicial", width: 40, dataIndex: 'deuda_inicial', sortable: true},
     {header: "Procurador", width: 40, dataIndex: 'procurador', sortable: true}
@@ -470,6 +504,7 @@ Ext.onReady(function(){
 			     fieldLabel: 'Descripción',
 			     name: 'descripcion',
 			     grow: true,
+			     width: 180,
 			     preventScrollbars: true
 			 })
 	    ,{
@@ -736,18 +771,21 @@ Ext.onReady(function(){
 		]
 	    });
 
-	ficha_grid.getSelectionModel().on('rowselect', function(sm, rowIdx, r) {
-		//var detailPanel = Ext.getCmp('detailPanel');
-		//bookTpl.overwrite(detailPanel.body, r.data);
+	// sm, rowIdx, r
+	ficha_grid.on('rowdblclick', function(grid_selected, rowIdx, e) {
+		
+		record= grid_selected.getStore().getAt(rowIdx);
+
 		grid.enable();
+
 		nuevo_registro_btn.enable();
-		evento_store.baseParams = {rut: r.data.rut};
+		evento_store.baseParams = {rut: record.data.rut};
 		evento_store.load();
 		grid.show();
 
 		// Agregar rut de deudor en formulario de 
 		// nuevo registro
-		registro_form.getForm().findField('rut_deudor').setValue(r.data.rut);
+		registro_form.getForm().findField('rut_deudor').setValue(record.data.rut);
 
 	    });
 
