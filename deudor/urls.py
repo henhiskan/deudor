@@ -16,10 +16,12 @@ urlpatterns = patterns('',
     (r'^getcodigo','core.views.getCodigo'),
     (r'^getformapago','core.views.getFormaPago'),
     (r'^getprocuradores','core.views.getProcuradores'),
+    (r'^getusuarios','core.views.getUsuarios'),
     (r'^gettribunales','core.views.getTribunales'),
     (r'^putevento','core.views.putEvento'),
     (r'^putdeudor','core.views.putDeudor'),
     (r'^putreporte','core.views.putReporte'),
+    (r'^putficha','core.views.putFicha'),
     (r'^getreporte','core.views.getReporte'),
                        
 )

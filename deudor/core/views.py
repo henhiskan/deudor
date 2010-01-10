@@ -157,7 +157,22 @@ def getProcuradores(request):
         (procuradores.count(),
          serializers.serialize('json', 
                                procuradores, 
+                               extras=('short_name',),
                                indent=4))
+
+    return HttpResponse(data, content_type='application/json')
+
+def getUsuarios(request):
+    usuarios = Usuario.objects.all()
+
+    data = '({ total: %d, "results":  %s  })' % \
+        (usuarios.count(),
+         serializers.serialize('json',
+                               usuarios,
+                               indent=4,
+                               excludes=('perfil'),
+                               extras=('short_name',),
+                               relations={'persona':{'fields':('nombres')}}))
 
     return HttpResponse(data, content_type='application/json')
     
@@ -170,6 +185,53 @@ def getTribunales(request):
                                indent=4))
 
     return HttpResponse(data, content_type='application/json')
+
+
+def putFicha(request):
+
+    campo = request.POST.get('campo',False)
+    id = request.POST.get('id',False)
+    valor = request.POST.get('valor',False)
+
+    if valor == "":
+        return HttpResponse('{"success":"error","descripcion":"Ingreso vacio"}', 
+                            content_type='application/json')
+    
+        
+    try:
+        ficha =  Ficha.objects.get(id=id)
+    except:
+        return HttpResponse('{"success":"error","descripcion":"no encontro ficha"}', 
+                            content_type='application/json')
+    
+    campos_modificados=""
+    if campo=='creado_por':
+        usuario = Usuario.objects.get(persona__rut=valor)
+        ficha.creado_por = usuario
+        campo_modificado = "Usuario"
+
+    if campo == 'carpeta':
+        ficha.carpeta = valor
+        campo_modificado = "Carpeta"
+    if campo == 'rol':
+        ficha.rol = valor
+        campo_modificado ="Rol"
+
+    if campo == 'procurador':
+        procurador = Usuario.objects.get(persona__rut=valor)
+        ficha.procurador = procurador
+        campo_modificado = "Procurador"
+        
+    if campo == 'tribunal':
+        tribunal = Tribunal.objects.get(nombre=valor)
+        ficha.tribunal = tribunal
+        campo_modificado = "Tribunal"
+
+
+    ficha.save()
+
+    return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', 
+                        content_type='application/json')
 
 
 def buscar(request):
@@ -213,11 +275,13 @@ def putEvento(request):
             event.codigo = codigo
             event.forma_pago = formapago
             event.save()
-            return HttpResponse()
+            return HttpResponse('{"result":"sucess"}',
+                                content_type='application/json')
 
         else:
             
-            return HttpResponse(event_form.errors)
+            return HttpResponse('{"result":"error","descripcion":"'+event_form.errors+'"}',
+                                content_type='application/json')
         
 
 class PersonaForm(forms.ModelForm):

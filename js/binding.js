@@ -8,6 +8,7 @@ var record;
 var store;
 var ficha_store;
 var procurador_store;
+var usuario_store;
 var tribunal_store;
 var codigo_store;
 var formapago_store;
@@ -30,6 +31,10 @@ var registro_form;
 var reporte_form;
 var reporte_win;
 var search;
+
+var ficha_ajax;
+
+var valor_tmp;
 
 Ext.onReady(function(){
 
@@ -167,9 +172,26 @@ Ext.onReady(function(){
 	      },[
   {name: 'nombres', type: 'string', mapping:'fields.nombres'},
   {name: 'apellidos', type: 'string', mapping:'fields.apellidos'},
+  {name: 'nombre', type:'string', mapping:'extras.short_name'},
   {name: 'rut', type: 'string', mapping:'pk'}
 		 ])
       });
+
+  usuario_store = new Ext.data.Store({
+	  proxy: new Ext.data.HttpProxy({
+		  url:'/deudor/getusuarios',
+		  method: 'GET'
+	      }),
+	  reader: new Ext.data.JsonReader({
+		  root: 'results',
+		  totalProperty: 'total',
+		  id: 'pk'
+	      },[
+  {name: 'nombre', type: 'string', mapping:'extras.short_name'},
+  {name: 'rut', type: 'string', mapping:'fields.persona.pk'}
+		 ])
+      });
+
 
 
   codigo_store = new Ext.data.Store({
@@ -255,11 +277,27 @@ Ext.onReady(function(){
 
 	    columns: [
     {header: "Fecha", width: 20, dataIndex: 'fecha', sortable: true, renderer: Ext.util.Format.dateRenderer('d/m/Y')},
-    {header: "Nombres", width: 40, dataIndex: 'nombres', sortable: true},
-    {header: "Apellidos", width: 40, dataIndex: 'apellidos', sortable: true},
-    {header: "Rut", width: 25, dataIndex: 'rut', sortable: true},
-    {header: "Rol", width: 30, dataIndex: 'rol', sortable: true},
-    {header: "Carpeta", width: 40, dataIndex: 'carpeta', sortable: true},
+  {header: "Nombres", width: 40, dataIndex: 'nombres', sortable: true,
+     editor: new Ext.form.TextField({
+	     allowBlank: true
+	 })
+    },
+  {header: "Apellidos", width: 40, dataIndex: 'apellidos', sortable: true,
+     editor: new Ext.form.TextField({
+	     allowBlank: true
+	 })
+},
+  {header: "Rut", width: 25, dataIndex: 'rut', sortable: true},
+  {header: "Rol", width: 30, dataIndex: 'rol', sortable: true,
+   editor: new Ext.form.NumberField({
+	   allowBlank: true,
+	   allowNegative: false
+       })
+  },
+    {header: "Carpeta", width: 40, dataIndex: 'carpeta', sortable: true,
+     editor: new Ext.form.TextField({
+	     allowBlank: true
+	 })},
     {header: "Tribunal", 
      width: 50, 
      dataIndex: 'tribunal', 
@@ -267,34 +305,38 @@ Ext.onReady(function(){
      editor: new Ext.form.ComboBox({
                     typeAhead: true,
                     triggerAction: 'all',
-                    // transform the data already specified in html
-                    //transform: 'tribunal',
                     lazyRender: true,
-		    store: tribunal_store
+		    store: tribunal_store,
+		    displayField: 'nombre',
+		    valueField: 'nombre',
 
                 })
 
-//      editor: new Ext.form.ComboBox({
-// 	     typeAhead: true,
-// 	     triggerAction: 'all',
-// 	     id:'procurador',
-// 	     store: procurador_store,
-// 	     fieldLabel: 'Procurador',
-// 	     displayField: 'nombres',
-// 	     valueField: 'rut',
-// 	     emptyText: 'Seleccione un procurador',
-// 	     mode:'local',
-// 	     minChars: 0,
-// 	     name: 'procurador',
-// 	     triggerAction: 'all'
-// 	 })
-     
-
-
     },
-    {header: "Creado por", width: 40, dataIndex: 'creado_por', sortable: true},
+  {header: "Creado por", width: 40, dataIndex: 'creado_por', sortable: true,
+   editor: new Ext.form.ComboBox({
+                    typeAhead: true,
+                    triggerAction: 'all',
+                    lazyRender: true,
+		    store: usuario_store,
+		    displayField: 'nombre',
+		    valueField: 'rut',
+
+                })
+
+  },
     {header: "Deuda Inicial", width: 40, dataIndex: 'deuda_inicial', sortable: true},
-    {header: "Procurador", width: 40, dataIndex: 'procurador', sortable: true}
+  {header: "Procurador", width: 40, dataIndex: 'procurador', sortable: true,
+ editor: new Ext.form.ComboBox({
+                    typeAhead: true,
+                    triggerAction: 'all',
+                    lazyRender: true,
+		    store: procurador_store,
+		    displayField: 'nombre',
+		    valueField: 'rut',
+
+                })
+  }
         ],
 		sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
 		viewConfig: {
@@ -302,6 +344,34 @@ Ext.onReady(function(){
 		},
 	region: 'center'
 	});
+
+
+
+    ficha_grid.on('afterEdit', function(e) {
+
+	    valor_tmp=e;
+	    Ext.Ajax.request({
+		    params : { campo : e.field,
+			    valor:  e.value,
+			    id: e.record.id},
+		   url : 'putficha' , 
+		   method: 'POST',
+	           form: Ext.fly('frmDummy'),
+		   isUpload: true,
+		   success: function ( result, request) { 
+			e.record.commit();
+
+	     
+	},
+			failure: function ( result, request) { 
+			Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
+		    }
+		});
+	    
+	    
+	});
+
+
 
 
     // Eventos deudor
@@ -362,6 +432,7 @@ Ext.onReady(function(){
      // en cada cambio de Tab, cambio el datastore
      // del buscador para el filtro
      tabs.on('tabchange', function(){
+
 	     search.store = tabs.activeTab.store;
 	 }); 
 
@@ -828,5 +899,5 @@ Ext.onReady(function(){
   formapago_store.load();
   procurador_store.load();
   tribunal_store.load();
-  
+  usuario_store.load();
 });

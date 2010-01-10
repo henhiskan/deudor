@@ -25,6 +25,10 @@ class Persona(models.Model):
     def __unicode__(self):
         return u"%s %s" % (self.nombres, self.apellidos)
 
+    def short_name(self):
+        return u"%s %s" % (self.nombres.split(" ")[0], 
+                           self.apellidos.split(" ")[0])
+
     def get_digito_verificador(self):
         """
         Entrega el digito verificador de self.rut
@@ -55,6 +59,9 @@ class Usuario(models.Model):
 
     def __unicode__(self):
         return self.persona.__unicode__()
+
+    def short_name(self):
+        return self.persona.short_name()
 
 class Codigo(models.Model):
     codigo_id = models.TextField(max_length=60)
