@@ -91,7 +91,7 @@ def getEvento(request):
                  serializers.serialize('json', 
                                        registro, 
                                        indent=4, 
-                               relations=({'codigo':{}})))
+                               relations=({'codigo':{},'forma_pago':{}})))
 
             return HttpResponse(data, content_type='application/json')
 
@@ -175,8 +175,8 @@ def getUsuarios(request):
                                relations={'persona':{'fields':('nombres')}}))
 
     return HttpResponse(data, content_type='application/json')
-    
 
+    
 def getTribunales(request):
     data = '({ total: %d, "results": %s })' % \
         (Tribunal.objects.count(),
@@ -185,6 +185,7 @@ def getTribunales(request):
                                indent=4))
 
     return HttpResponse(data, content_type='application/json')
+
 
 
 def putFicha(request):
@@ -229,6 +230,64 @@ def putFicha(request):
 
 
     ficha.save()
+
+    return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', 
+                        content_type='application/json')
+
+
+def putEventoEdit(request):
+
+    campo = request.POST.get('campo',False)
+    id = request.POST.get('id',False)
+    valor = request.POST.get('valor',False)
+    rut_deudor = request.POST.get('rut_deudor',False)
+
+    if valor == "":
+        return HttpResponse('{"success":"error","descripcion":"Ingreso vacio"}', 
+                            content_type='application/json')
+    
+        
+    try:
+        evento =  Evento.objects.get(id=id)
+    except:
+        return HttpResponse('{"result":"error","descripcion":"no se encontro evento "}', 
+                            content_type='application/json')
+    
+    campos_modificados=""
+    if campo=='codigo':
+        codigo = Codigo.objects.get(codigo_id=valor)
+        evento.codigo = codigo
+        campo_modificado = "codigo"
+
+    if campo == 'descripcion':
+        evento.descripcion = valor
+        campo_modificado = "Descripcion"
+
+
+    if campo == 'pago':
+        pago = FormaPago.objects.get(codigo=valor)
+        evento.forma_pago = pago
+        campo_modificado = "Forma de Pago"
+
+    if campo == 'abono':
+        evento.abono = valor
+        campo_modificado ="Abono"
+
+    if campo == 'honorario':
+        evento.honorario = valor
+        campo_modificado ="Honorario"
+
+    if campo == 'gasto':
+        evento.gasto = valor
+        campo_modificado ="Gasto"
+        
+    if campo == 'tribunal':
+        tribunal = Tribunal.objects.get(nombre=valor)
+        ficha.tribunal = tribunal
+        campo_modificado = "Tribunal"
+
+
+    evento.save()
 
     return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', 
                         content_type='application/json')
@@ -280,7 +339,7 @@ def putEvento(request):
 
         else:
             
-            return HttpResponse('{"result":"error","descripcion":"'+event_form.errors+'"}',
+            return HttpResponse('{"result":"error","descripcion":"'+str(event_form.errors)+'"}',
                                 content_type='application/json')
         
 

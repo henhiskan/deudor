@@ -150,7 +150,7 @@ Ext.onReady(function(){
   {name: 'fecha', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.fecha'},
   {name: 'codigo',type:'string',mapping:'fields.codigo.fields.descripcion'},
   {name: 'descripcion',type:'string',mapping:'fields.descripcion'},
-  {name: 'pago',  type:'string',  mapping:'fields.forma_pago'},
+  {name: 'pago',  type:'string',  mapping:'fields.forma_pago.fields.nombre'},
   {name: 'abono', type:'int', mapping:'fields.abono_deuda'},
   {name: 'gasto', type:'int', mapping:'fields.gasto_judicial'},
   {name: 'honorario',type:'int',mapping:'fields.honorario'}
@@ -375,19 +375,57 @@ Ext.onReady(function(){
 
 
     // Eventos deudor
-     grid = new Ext.grid.GridPanel({
+     grid = new Ext.grid.EditorGridPanel({
 	     store: evento_store,
 	     height: '200',
 	     title: 'Eventos Deudor',
+	     clicksToEdit: 1,
 
         columns: [
     {header: "Fecha", width: 40, dataIndex: 'fecha', sortable: true,renderer: Ext.util.Format.dateRenderer('d/m/Y')},
-    {header: "Codigo", width: 20, dataIndex: 'codigo', sortable: true},
-    {header: "Descripción", width: 40, dataIndex: 'descripcion', sortable: true},
-    {header: "Forma Pago", width: 40, dataIndex: 'pago', sortable: true},
-    {header: "Abono", width: 40, dataIndex: 'abono', sortable: true},
-    {header: "Honorario", width: 40, dataIndex: 'honorario', sortable: true},
-    {header: "Gasto", width: 40, dataIndex: 'gasto', sortable: true}
+    {header: "Codigo", width: 60, dataIndex: 'codigo', sortable: true,
+     editor: new Ext.form.ComboBox({
+                    typeAhead: true,
+                    triggerAction: 'all',
+                    lazyRender: true,
+		    store: codigo_store,
+		    displayField: 'descripcion',
+		    valueField: 'codigo',
+
+	 })},
+    {header: "Descripción", width: 70, dataIndex: 'descripcion', sortable: true,
+     editor: new Ext.form.TextField({
+	     allowBlank: true}
+	 )},
+    {header: "Forma Pago", width: 40, 
+     dataIndex: 'pago', sortable: true,
+
+     editor: new Ext.form.ComboBox({
+                    typeAhead: true,
+                    triggerAction: 'all',
+                    lazyRender: true,
+		    store: formapago_store,
+		    displayField: 'nombre',
+		    valueField: 'codigo',
+
+	 })},
+
+    {header: "Abono", width: 40, dataIndex: 'abono', sortable: true,
+     editor: new Ext.form.NumberField({
+	     allowBlank: true,
+	     allowNegative: false
+	 })},
+    {header: "Honorario", width: 40, dataIndex: 'honorario', sortable: true,
+     editor: new Ext.form.NumberField({
+	     allowBlank: true,
+	     allowNegative: false
+	 })
+    },
+    {header: "Gasto", width: 40, dataIndex: 'gasto', sortable: true,
+     editor: new Ext.form.NumberField({
+	     allowBlank: true,
+	     allowNegative: false
+	 })}
 	    
         ],
 		sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
@@ -396,6 +434,32 @@ Ext.onReady(function(){
 	     },
 	      region: 'center'
 	});
+
+     
+     grid.on('afterEdit', function(e) {
+	     
+	    valor_tmp=e;
+	    Ext.Ajax.request({
+		    params : { campo : e.field,
+			    valor: e.value,
+			    id: e.record.id,
+			    rut_deudor: registro_form.getForm().findField('rut_deudor').value},
+		   url : 'puteventoedit' , 
+		   method: 'POST',
+	           form: Ext.fly('frmDummy'),
+		   isUpload: true,
+		   success: function ( result, request) { 
+			e.record.commit();
+	     
+	},
+			failure: function ( result, request) { 
+			Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
+		    }
+		});
+	    
+	 });
+
+
 
 
 
@@ -521,6 +585,7 @@ Ext.onReady(function(){
 				hiddenName: 'codigo',
 				id:'combo',
 				store: codigo_store,
+				allowBlank: false,
 				fieldLabel: 'Codigo',
 				displayField: 'descripcion',
 				valueField: 'codigo',
@@ -539,6 +604,7 @@ Ext.onReady(function(){
 			new Ext.form.ComboBox({
 				hiddenName: 'formapago_codigo',
 				id:'formapago',
+				allowBlank: false,
 				store: formapago_store,
 				fieldLabel: 'Forma pago',
 				displayField: 'nombre',
@@ -552,8 +618,9 @@ Ext.onReady(function(){
 			
                 {
                     xtype:'numberfield',
-                    fieldLabel: 'Abono Deuda',
-                    name: 'abono_deuda'
+			fieldLabel: 'Abono Deuda',
+			allowBlank: false,
+			name: 'abono_deuda'
 
                 }]
 	   },{
@@ -561,11 +628,13 @@ Ext.onReady(function(){
                 items: [{
                     xtype:'numberfield',
                     fieldLabel: 'Gasto Judicial',
+		    allowBlank: false,
                     name: 'gasto_judicial'
 
                 },{
                     xtype:'numberfield',
                     fieldLabel: 'Honorario',
+		    allowBlank: false,
                     name: 'honorario'
 
                 }]
@@ -576,6 +645,7 @@ Ext.onReady(function(){
 			     name: 'descripcion',
 			     grow: true,
 			     width: 180,
+			     allowBlank: false,
 			     preventScrollbars: true
 			 })
 	    ,{
