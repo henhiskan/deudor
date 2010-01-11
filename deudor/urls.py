@@ -24,6 +24,5 @@ urlpatterns = patterns('',
     (r'^putreporte','core.views.putReporte'),
     (r'^putficha','core.views.putFicha'),
     (r'^getreporte','core.views.getReporte'),
-    (r'^getpersona','core.views.getPersona'),
                        
 )
