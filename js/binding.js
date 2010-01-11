@@ -657,15 +657,17 @@ Ext.onReady(function(){
 		    text: 'Guardar',
 		    handler: function(){
 			var f = registro_form.getForm();
-			if (f.isValid()){
-			   f.submit({
-			     method:'POST',
-			     url:'putevento',
-			     success: function(){
-				  Ext.MessageBox.alert('Exitoso', 'Datos enviados');
-				  registro_form.getForm().reset();
-				  registro_win.hide();
-				  evento_store.load();
+			if (f.isValid()){			    
+			    
+
+			    f.submit({
+				    method:'POST',
+				    url:'putevento',
+				    success: function(){
+				    Ext.MessageBox.alert('Exitoso', 'Datos enviados');
+				    registro_form.getForm().reset();
+				    registro_win.hide();
+				    evento_store.load();
 				   }})
 			       }
 			else{
@@ -822,16 +824,29 @@ Ext.onReady(function(){
 		     handler: function(){
 			var f = deudor_form.getForm();
 			if (f.isValid()){
-			   f.submit({
-			     method:'POST',
-			     url:'putdeudor',
-			     success: function(){
-				  Ext.MessageBox.alert('Exitoso', 'Datos enviados');
-				  deudor_form.getForm().reset();
-				  win.hide();
-				  ficha_store.load();
-				   }})
-			       }
+
+			    //chequear si existe un deudor con 
+			    // el rut ingresado
+			    rut = deudor_form.getForm().findField('rut').value.split('-')[0].replace(/\./g,'');
+			    if (ficha_store.find('rut',rut) == -1){
+
+				f.submit({
+					method:'POST',
+					url:'putdeudor',
+					success: function(){
+					Ext.MessageBox.alert('Exitoso', 'Datos enviados');
+					deudor_form.getForm().reset();
+					win.hide();
+					ficha_store.load();
+					}})
+
+				    }
+			    else {
+
+				Ext.MessageBox.alert("Error", 
+						     "El rut ingresado pertenece a un deudor registrado");
+			    }
+			}
 			else{
 			    Ext.MessageBox.alert('Errores', 'Por favor, corriga los errores.');
 			}
