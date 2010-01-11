@@ -102,6 +102,26 @@ def getEvento(request):
                             '"results":[]})',  mimetype="text/plain", content_type="application/json")
 
 
+def getDeudor(request):
+    """ obtiene una pesona a travez del rut"""
+
+    rut = request.GET.get('rut',False)
+    if rut:
+        persona = Persona.objects.get(rut=rut)
+        if persona:
+            data = '({ total: %d, "results": %s })' % \
+                (1,
+                 serializers.serialize('json', 
+                                       persona, 
+                                       indent=4, 
+                               ))
+
+            return HttpResponse(data, 
+                                content_type='application/json')
+    return HttpResponse('({"resultado":"no existe"})')
+            
+        
+
 def getFicha(request):
     
     query = request.GET.get('query',False)
@@ -231,7 +251,7 @@ def putFicha(request):
 
     ficha.save()
 
-    return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', 
+    return HttpResponse('{"result":"success","modificaciones":"'+campos_modificados +'" }', 
                         content_type='application/json')
 
 
@@ -376,7 +396,10 @@ def putDeudor(request):
         if persona_form.is_valid():
             persona = persona_form.save()
         else:
-            return HttpResponse(persona_form.errors)
+            
+            return HttpResponse(type(persona_form.errors))
+            #return HttpResponse('{"result":"error", "descripcion":"'+ str(persona_form.errors)+'"}',
+            #                                                    content_type='application/json')
 
 
         #busqueda del tribunal
