@@ -131,6 +131,8 @@ class FormaPago(models.Model):
 class Evento(models.Model):
     ficha = models.ForeignKey(Ficha)
     fecha = models.DateTimeField()
+    proximo_pago = models.DateTimeField(blank=True, null=True)
+
     codigo = models.ForeignKey(Codigo)
     
     descripcion =  models.TextField(max_length=200)

@@ -333,7 +333,13 @@ def buscar(request):
         
         
 class EventoForm(forms.ModelForm):
-    fecha = forms.DateField(input_formats=['%d/%m/%Y'],error_messages={'invalid': 'Fecha invalida','required':'Campo Obligatorio'})
+    fecha = forms.DateField(input_formats=['%d/%m/%Y'],
+                            error_messages={'invalid': 'Fecha invalida',
+                                            'required':'Campo Obligatorio'})
+
+    proximo_pago = forms.DateField(input_formats=['%d/%m/%Y'],
+                                   error_messages={'invalid': 'Fecha invalida'}, 
+                                   required=False)
 
     class Meta:
         model = Evento
@@ -342,12 +348,10 @@ class EventoForm(forms.ModelForm):
 def putEvento(request):
 
     if request.method == "POST":
-        #return HttpResponse(request.POST.REQUEST)
-        #event_form = EventoForm(request.POST)
         
-        rut_deudor = request.POST['rut_deudor']
-        codigo_id = request.POST['codigo']
-        forma_pago_codigo = request.POST['formapago_codigo']
+        rut_deudor = request.POST.get('rut_deudor',False)
+        codigo_id = request.POST.get('codigo',False)
+        forma_pago_codigo = request.POST.get('formapago_codigo',False)
 
         event_form = EventoForm(request.POST)
 

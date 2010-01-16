@@ -152,6 +152,7 @@ Ext.onReady(function(){
 		  
            }, [
   {name: 'fecha', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.fecha'},
+  {name: 'prox_pago', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.proximo_pago'},
   {name: 'codigo',type:'string',mapping:'fields.codigo.fields.descripcion'},
   {name: 'descripcion',type:'string',mapping:'fields.descripcion'},
   {name: 'pago',  type:'string',  mapping:'fields.forma_pago.fields.nombre'},
@@ -274,7 +275,9 @@ Ext.onReady(function(){
 	    clicksToEdit: 1,
 
 	    columns: [
-  {header: "Fecha", width: 30, dataIndex: 'fecha', sortable: true, renderer: Ext.util.Format.dateRenderer('d/m/Y')},
+  {header: "Fecha", width: 30, dataIndex: 'fecha', sortable: true, 
+   renderer: Ext.util.Format.dateRenderer('d/m/Y')},
+
   {header: "Nombres", width: 40, dataIndex: 'nombres', sortable: true
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
    ,editor: new Ext.form.TextField({
@@ -429,7 +432,12 @@ Ext.onReady(function(){
 	     clicksToEdit: 1,
 
         columns: [
-    {header: "Fecha", width: 40, dataIndex: 'fecha', sortable: true,renderer: Ext.util.Format.dateRenderer('d/m/Y')},
+    {header: "Fecha", width: 40, dataIndex: 'fecha', sortable: true,
+     renderer: Ext.util.Format.dateRenderer('d/m/Y')},
+
+    {header: "Proximo Pago", width: 40, dataIndex: 'prox_pago', sortable: true, 
+     renderer: Ext.util.Format.dateRenderer('d/m/Y')},
+
     {header: "Codigo", width: 60, dataIndex: 'codigo', sortable: true
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
      , editor: new Ext.form.ComboBox({
@@ -678,8 +686,8 @@ Ext.onReady(function(){
 	});
 	    
 
-
-
+    
+    // formulario de ingreso de un Evento
     registro_form = new Ext.FormPanel({
         labelAlign: 'top',
         frame:true,
@@ -696,6 +704,14 @@ Ext.onReady(function(){
 			format: 'd/m/Y',
 			value: (new Date()).format('d/m/Y')
 			    }),
+
+			new Ext.form.DateField({
+				fieldLabel: 'Fecha Proximo Pago',
+				name: 'proximo_pago',
+				format: 'd/m/Y'
+				//value: (new Date()).format('d/m/Y')
+			    }),
+			
 			new Ext.form.ComboBox({
 				hiddenName: 'codigo',
 				id:'combo',
