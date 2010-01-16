@@ -4,6 +4,7 @@
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
+
 var record;
 var store;
 var ficha_store;
@@ -34,7 +35,10 @@ var search;
 
 var ficha_ajax;
 
-var valor_tmp;
+
+
+{% load tags %}
+
 
 Ext.onReady(function(){
 
@@ -258,12 +262,6 @@ Ext.onReady(function(){
 
 
 
-  ////////////////////////////////////////
-
-  
-
-  
-
     ///////////////////////////////////
     //           GRIDS
     ///////////////////////////////////
@@ -276,80 +274,131 @@ Ext.onReady(function(){
 	    clicksToEdit: 1,
 
 	    columns: [
-    {header: "Fecha", width: 20, dataIndex: 'fecha', sortable: true, renderer: Ext.util.Format.dateRenderer('d/m/Y')},
-  {header: "Nombres", width: 40, dataIndex: 'nombres', sortable: true,
-     editor: new Ext.form.TextField({
+  {header: "Fecha", width: 30, dataIndex: 'fecha', sortable: true, renderer: Ext.util.Format.dateRenderer('d/m/Y')},
+  {header: "Nombres", width: 40, dataIndex: 'nombres', sortable: true
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+   ,editor: new Ext.form.TextField({
 	     allowBlank: true
 	 })
+   {% endifnotequal %}
     },
-  {header: "Apellidos", width: 40, dataIndex: 'apellidos', sortable: true,
-     editor: new Ext.form.TextField({
+  {header: "Apellidos", width: 40, dataIndex: 'apellidos', sortable: true
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+   ,editor: new Ext.form.TextField({
 	     allowBlank: true
-	 })
+       })
+       {% endifnotequal %}
 },
   {header: "Rut", width: 25, dataIndex: 'rut', sortable: true},
-  {header: "Rol", width: 30, dataIndex: 'rol', sortable: true,
-   editor: new Ext.form.NumberField({
+  {header: "Rol", width: 30, dataIndex: 'rol', sortable: true
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+   ,editor: new Ext.form.NumberField({
 	   allowBlank: true,
 	   allowNegative: false
        })
+       {% endifnotequal %}
   },
-    {header: "Carpeta", width: 40, dataIndex: 'carpeta', sortable: true,
-     editor: new Ext.form.TextField({
+    {header: "Carpeta", width: 40, dataIndex: 'carpeta', sortable: true
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+     ,editor: new Ext.form.TextField({
 	     allowBlank: true
-	 })},
+	 })
+       {% endifnotequal %}
+    },
     {header: "Tribunal", 
      width: 50, 
      dataIndex: 'tribunal', 
-     sortable: true,
-     editor: new Ext.form.ComboBox({
+     sortable: true
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+     ,editor: new Ext.form.ComboBox({
                     typeAhead: true,
                     triggerAction: 'all',
                     lazyRender: true,
 		    store: tribunal_store,
 		    displayField: 'nombre',
-		    valueField: 'nombre',
-
+		    valueField: 'nombre'
                 })
-
+   {% endifnotequal %}
     },
-  {header: "Creado por", width: 40, dataIndex: 'creado_por', sortable: true,
-   editor: new Ext.form.ComboBox({
+  {header: "Creado por", width: 40, dataIndex: 'creado_por', sortable: true
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+      ,editor: new Ext.form.ComboBox({
                     typeAhead: true,
                     triggerAction: 'all',
                     lazyRender: true,
 		    store: usuario_store,
 		    displayField: 'nombre',
-		    valueField: 'rut',
-
+		    valueField: 'rut'
                 })
-
+   {% endifnotequal %}
   },
     {header: "Deuda Inicial", width: 40, dataIndex: 'deuda_inicial', sortable: true},
-  {header: "Procurador", width: 40, dataIndex: 'procurador', sortable: true,
- editor: new Ext.form.ComboBox({
+  {header: "Procurador", width: 40, dataIndex: 'procurador', sortable: true
+
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+   , editor: new Ext.form.ComboBox({
                     typeAhead: true,
                     triggerAction: 'all',
                     lazyRender: true,
 		    store: procurador_store,
 		    displayField: 'nombre',
-		    valueField: 'rut',
-
+		    valueField: 'rut'
                 })
+   {% endifnotequal %}
   }
-        ],
+
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+    ,{width: 40, dataIndex: 0, id: 'deleter', sortable: false, fixed: true,
+     renderer: function(v, p, record, rowIndex){
+        return '<div class="deleter" style="width: 15px; height: 16px;"></div>';
+	 }}
+  {% endifnotequal %}
+     ],
 		sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
 		viewConfig: {
 			forceFit: true
 		},
 	region: 'center'
+	    
 	});
 
+    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+    ficha_grid.on('cellclick', function(grilla, rowIndex, columnIndex, e){
+	    
+	    if(columnIndex == ficha_grid.getColumnModel().getIndexById('deleter')) {
+		
+		var record= ficha_grid.getStore().getAt(rowIndex);
+		
+		Ext.MessageBox.confirm('Confirm', '¿Esta seguro de querer eliminar esta ficha y sus eventos?', function(btn){
+		     respuesta = btn;
+		     if (respuesta == 'yes'){
+			    Ext.Ajax.request({
+				params : {id: record.id},
+			        url : 'deleteficha' , 
+				method: 'GET',
+	                        form: Ext.fly('frmDummy'),
+		   isUpload: true,
+		   success: function ( result, request) { 
+			ficha_grid.getStore().remove(record);
+			ficha_grid.getView().refresh();
+			   },
+		   failure: function ( result, request) { 
+		          Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
+		            }
+			});
 
+			
+		     }
+		 });
+
+		
+	       
+	     }
+	});
+    {% endifnotequal %}
 
     ficha_grid.on('afterEdit', function(e) {
 
-	    valor_tmp=e;
 	    Ext.Ajax.request({
 		    params : { campo : e.field,
 			    valor:  e.value,
@@ -360,18 +409,16 @@ Ext.onReady(function(){
 		   isUpload: true,
 		   success: function ( result, request) { 
 			e.record.commit();
-
+			ficha_store.load();
 	     
-	},
-			failure: function ( result, request) { 
+		    },
+		   failure: function ( result, request) { 
 			Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
 		    }
 		});
 	    
 	    
 	});
-
-
 
 
     // Eventos deudor
@@ -383,50 +430,71 @@ Ext.onReady(function(){
 
         columns: [
     {header: "Fecha", width: 40, dataIndex: 'fecha', sortable: true,renderer: Ext.util.Format.dateRenderer('d/m/Y')},
-    {header: "Codigo", width: 60, dataIndex: 'codigo', sortable: true,
-     editor: new Ext.form.ComboBox({
+    {header: "Codigo", width: 60, dataIndex: 'codigo', sortable: true
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+     , editor: new Ext.form.ComboBox({
                     typeAhead: true,
                     triggerAction: 'all',
                     lazyRender: true,
 		    store: codigo_store,
 		    displayField: 'descripcion',
-		    valueField: 'codigo',
-
-	 })},
-    {header: "Descripción", width: 70, dataIndex: 'descripcion', sortable: true,
-     editor: new Ext.form.TextField({
+		    valueField: 'codigo'
+	 })
+	 {% endifnotequal %}
+    },
+    {header: "Descripción", width: 70, dataIndex: 'descripcion', sortable: true
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+     ,editor: new Ext.form.TextField({
 	     allowBlank: true}
-	 )},
+	 )
+   {% endifnotequal %}
+    },
     {header: "Forma Pago", width: 40, 
-     dataIndex: 'pago', sortable: true,
-
-     editor: new Ext.form.ComboBox({
+     dataIndex: 'pago', sortable: true
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+     ,editor: new Ext.form.ComboBox({
                     typeAhead: true,
                     triggerAction: 'all',
                     lazyRender: true,
 		    store: formapago_store,
 		    displayField: 'nombre',
-		    valueField: 'codigo',
+		    valueField: 'codigo'
 
-	 })},
+	 })
+   {% endifnotequal %}
+    },
 
-    {header: "Abono", width: 40, dataIndex: 'abono', sortable: true,
-     editor: new Ext.form.NumberField({
+    {header: "Abono", width: 40, dataIndex: 'abono', sortable: true
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+   , editor: new Ext.form.NumberField({
 	     allowBlank: true,
 	     allowNegative: false
-	 })},
-    {header: "Honorario", width: 40, dataIndex: 'honorario', sortable: true,
-     editor: new Ext.form.NumberField({
+       })
+   {% endifnotequal %}
+    },
+    {header: "Honorario", width: 40, dataIndex: 'honorario', sortable: true
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+   , editor: new Ext.form.NumberField({
+	     allowBlank: true,
+	     allowNegative: false
+       })
+
+   {% endifnotequal %}
+    },
+    {header: "Gasto", width: 40, dataIndex: 'gasto', sortable: true
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+     ,editor: new Ext.form.NumberField({
 	     allowBlank: true,
 	     allowNegative: false
 	 })
-    },
-    {header: "Gasto", width: 40, dataIndex: 'gasto', sortable: true,
-     editor: new Ext.form.NumberField({
-	     allowBlank: true,
-	     allowNegative: false
-	 })}
-	    
+   {% endifnotequal %}
+    }
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+   ,{width: 40, dataIndex: 0, id: 'deleter', sortable: false, fixed: true,
+     renderer: function(v, p, record, rowIndex){
+        return '<div class="deleter" style="width: 15px; height: 16px;"></div>';
+       }}
+    {% endifnotequal %}
         ],
 		sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
 		viewConfig: {
@@ -435,14 +503,49 @@ Ext.onReady(function(){
 	      region: 'center'
 	});
 
+
+     {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+     grid.on('cellclick', function(grid, rowIndex, columnIndex, e){
+	     
+         if(columnIndex==grid.getColumnModel().getIndexById('deleter')) {
+	     var record= grid.getStore().getAt(rowIndex);
+	     
+	     var record = grid.getStore().getAt(rowIndex);
+	     var respuesta = "";
+	     Ext.MessageBox.confirm('Confirm', '¿Esta seguro de querer eliminar este evento?', function(btn){
+		     respuesta = btn;
+		     if (respuesta == 'yes'){
+			    Ext.Ajax.request({
+				params : {id: record.id},
+			        url : 'deleteevento' , 
+				method: 'GET',
+	                        form: Ext.fly('frmDummy'),
+		   isUpload: true,
+		   success: function ( result, request) { 
+			grid.getStore().remove(record);
+		        grid.getView().refresh();
+			   },
+		   failure: function ( result, request) { 
+		          Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
+		            }
+			});
+
+			
+		     }
+		 });
+
+	     }
+	 });
+
+     {% endifnotequal %}
      
      grid.on('afterEdit', function(e) {
 	     
-	    valor_tmp=e;
 	    Ext.Ajax.request({
-		    params : { campo : e.field,
-			    valor: e.value,
-			    id: e.record.id,
+		    params : {
+			campo : e.field,
+			valor: e.value,
+			id: e.record.id,
 			    rut_deudor: registro_form.getForm().findField('rut_deudor').value},
 		   url : 'puteventoedit' , 
 		   method: 'POST',
@@ -501,7 +604,7 @@ Ext.onReady(function(){
 	 }); 
 
 
-//////////////////////////////////////////////////
+///////////////////////////////////////
 ///// SEARCH Toolbar     
 
      search = new Ext.ux.form.SearchField({
@@ -512,9 +615,21 @@ Ext.onReady(function(){
      tb = new Ext.Toolbar();
 
      tb.add(
-	    nuevo_deudor_btn, nuevo_registro_btn, reporte_btn,
+	    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+	    nuevo_deudor_btn,
+	    {% endifnotequal %} nuevo_registro_btn, reporte_btn,
 	    'Busqueda: ',' ',
-	    search
+	    search, '    ',
+	    {
+                text:'Logout',
+                handler:function(){
+                    Ext.Ajax.request({
+                        url:'/deudor/logout',
+                        success:function(){window.location='/deudor/login';},
+                        failure:function(){window.location='/deudor/ficha';},
+                    });
+                },
+		    }
 	    );
     
     
@@ -658,17 +773,15 @@ Ext.onReady(function(){
 		    handler: function(){
 			var f = registro_form.getForm();
 			if (f.isValid()){			    
-			    
-
 			    f.submit({
 				    method:'POST',
 				    url:'putevento',
 				    success: function(){
-				    Ext.MessageBox.alert('Exitoso', 'Datos enviados');
+				    Ext.MessageBox.alert('Exitoso', 'Evento guardado');
 				    registro_form.getForm().reset();
 				    registro_win.hide();
 				    evento_store.load();
-				   }})
+				    }})
 			       }
 			else{
 			    Ext.MessageBox.alert('Errores', 'Por favor, corriga los errores.');
@@ -926,6 +1039,8 @@ Ext.onReady(function(){
 			
 		]
 	    });
+	
+
 
 	// sm, rowIdx, r
 	ficha_grid.on('rowdblclick', function(grid_selected, rowIdx, e) {

@@ -7,6 +7,7 @@ from django.core import serializers
 from django import forms
 from django.db.models import Q
 from django.db import connection
+from django.contrib.auth.models import User
 
 from core.models import *
 
@@ -14,7 +15,13 @@ import pyExcelerator
 import tempfile
 import csv
 
-login_needed = user_passes_test(lambda u: not u.is_anonymous(), login_url='/jjdonoso/login/')
+login_needed = user_passes_test(lambda u: not u.is_anonymous(), login_url='/deudor/login/')
+procurador_needed = user_passes_test(lambda u: not u.is_anonymous() and u.usuario_set.get() and u.usuario_set.get().get_perfil_display() == 'procurador', login_url='/deudor/login/')
+procurador_needed = user_passes_test(lambda u: not u.is_anonymous() and u.usuario_set.get() and u.usuario_set.get().get_perfil_display() == 'procurador', login_url='/deudor/login/')
+cobranza_needed = user_passes_test(lambda u: not u.is_anonymous() and u.usuario_set.get() and u.usuario_set.get().get_perfil_display() == 'cobranza', login_url='/deudor/login/')
+administrador_needed = user_passes_test(lambda u: not u.is_anonymous() and u.usuario_set.get() and u.usuario_set.get().get_perfil_display() == 'administrador', login_url='/deudor/login/')
+
+
   
 def Serialize(queryset, root_name=None):
 
@@ -35,7 +42,7 @@ def main(request):
 
 
 
-
+@login_needed
 def ficha(request):
     
     t = loader.get_template('ficha.html')
@@ -134,14 +141,15 @@ def getFicha(request):
         filtro = filtro|Q(rol__icontains=query)        
         fichas = Ficha.objects.filter(filtro)
     else:
-        fichas = Ficha.objects.all()
+        fichas = Ficha.objects.all().order_by('persona__apellidos')
 
     data = '({ total: %d, "results": %s })' % \
         (fichas.count(),
          serializers.serialize('json', 
                                fichas, 
                                indent=4, 
-                               relations=({'procurador':{'relations':('persona',)},'tribunal':{},'persona':{},'creado_por':{'relations':('persona',)}})))
+                               extras=('getNombreCreador','getNombreProcurador',),
+                               relations=({'procurador':{},'tribunal':{},'persona':{},'creado_por':{}})))
 
     return HttpResponse(data, content_type='application/json')
     
@@ -171,7 +179,7 @@ def getFormaPago(request):
     
 def getProcuradores(request):
 
-    procuradores = Persona.objects.filter(usuario__perfil = '2')
+    procuradores = Usuario.objects.filter(perfil = '2')
 
     data = '({ total: %d, "results": %s })' % \
         (procuradores.count(),
@@ -192,7 +200,7 @@ def getUsuarios(request):
                                indent=4,
                                excludes=('perfil'),
                                extras=('short_name',),
-                               relations={'persona':{'fields':('nombres')}}))
+                               relations={'user':{'fields':('nombres')}}))
 
     return HttpResponse(data, content_type='application/json')
 
@@ -225,11 +233,11 @@ def putFicha(request):
         return HttpResponse('{"success":"error","descripcion":"no encontro ficha"}', 
                             content_type='application/json')
     
-    campos_modificados=""
+    campo_modificado=""
     if campo=='creado_por':
-        usuario = Usuario.objects.get(persona__rut=valor)
+        usuario = Usuario.objects.get(id=valor)
         ficha.creado_por = usuario
-        campo_modificado = "Usuario"
+        campo_modificado = "Creado_por"
 
     if campo == 'carpeta':
         ficha.carpeta = valor
@@ -239,7 +247,7 @@ def putFicha(request):
         campo_modificado ="Rol"
 
     if campo == 'procurador':
-        procurador = Usuario.objects.get(persona__rut=valor)
+        procurador = Usuario.objects.get(id=valor)
         ficha.procurador = procurador
         campo_modificado = "Procurador"
         
@@ -251,7 +259,7 @@ def putFicha(request):
 
     ficha.save()
 
-    return HttpResponse('{"result":"success","modificaciones":"'+campos_modificados +'" }', 
+    return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', 
                         content_type='application/json')
 
 
@@ -354,8 +362,9 @@ def putEvento(request):
             event.codigo = codigo
             event.forma_pago = formapago
             event.save()
-            return HttpResponse('{"result":"sucess"}',
-                                content_type='application/json')
+            #return HttpResponse('{"result":"sucess"}',
+            #                    content_type='application/json')
+            return HttpResponse()
 
         else:
             
@@ -503,3 +512,34 @@ def putReporte(request):
 
     else:
         return HttpResponse("sin data")
+
+
+def getDeudorJs(request):
+
+    t = loader.get_template('js/deudor.js')
+    c = Context({
+           'usuario': request.user, })
+    return HttpResponse(t.render(c))
+
+
+def deleteEvento(request):
+    """ Borra un evento con el id """
+
+    id_evento =  request.GET.get('id', False)
+    if id_evento:
+        evento = Evento.objects.get(id = id_evento)
+        evento.delete()
+    
+    return HttpResponse()
+    
+
+def deleteFicha(request):
+    """ Borra una ficha mediante un id """
+    id_ficha =  request.GET.get('id', False)
+    if id_ficha:
+        ficha = Ficha.objects.get(id = id_ficha)
+        ficha.delete()
+    
+    return HttpResponse()
+    
+    

@@ -54,14 +54,14 @@ class Persona(models.Model):
         return  str(self.rut) + '-' + str(self.get_digito_verificador())
 
 class Usuario(models.Model):
-    persona = models.ForeignKey(Persona)
+    user = models.ForeignKey(User)
     perfil = models.CharField(max_length=1,choices=PERFIL_USUARIO)
 
     def __unicode__(self):
-        return self.persona.__unicode__()
+        return self.user.__unicode__()
 
     def short_name(self):
-        return self.persona.short_name()
+        return self.user.get_full_name()
 
 class Codigo(models.Model):
     codigo_id = models.TextField(max_length=60)
@@ -109,6 +109,14 @@ class Ficha(models.Model):
         else:
             return self.persona.__unicode__()
     
+
+    def getNombreCreador(self):
+        if self.creado_por:
+            return self.creado_por.short_name()
+
+    def getNombreProcurador(self):
+        if self.procurador:
+            return self.procurador.short_name()
 
 class FormaPago(models.Model):
     codigo = models.IntegerField()
