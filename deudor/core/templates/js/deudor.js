@@ -563,7 +563,7 @@ Ext.onReady(function(){
 			e.record.commit();
 			//refresh para ocultar los id en combobox
 			evento_store.load();
-	},
+		    },
 			failure: function ( result, request) { 
 			Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
 		    }
@@ -798,6 +798,7 @@ Ext.onReady(function(){
 					registro_form.getForm().reset();
 					registro_win.hide();
 					evento_store.load();
+					ficha_store.load();
 				    }})
 			       }
 			else{

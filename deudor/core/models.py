@@ -102,7 +102,8 @@ class Ficha(models.Model):
     deuda_inicial = models.IntegerField(blank=True, null=True)
     procurador = models.ForeignKey(Usuario, blank=True, null=True)
 
-    
+    esta_cerrado = models.BooleanField(default=False)
+
     def __unicode__(self):
         if self.rol:
             return self.rol

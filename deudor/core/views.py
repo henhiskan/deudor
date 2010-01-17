@@ -139,9 +139,9 @@ def getFicha(request):
         filtro = filtro|Q(persona__apellidos__icontains=query)
         filtro = filtro|Q(persona__rut__icontains=query)
         filtro = filtro|Q(rol__icontains=query)        
-        fichas = Ficha.objects.filter(filtro)
+        fichas = Ficha.objects.filter(esta_cerrado=False).filter(filtro)
     else:
-        fichas = Ficha.objects.all().order_by('persona__apellidos')
+        fichas = Ficha.objects.filter(esta_cerrado=False).order_by('persona__apellidos')
 
     data = '({ total: %d, "results": %s })' % \
         (fichas.count(),
@@ -217,6 +217,7 @@ def getTribunales(request):
 
 
 def putFicha(request):
+    """ Ingreso de una nueva ficha deudor """
 
     campo = request.POST.get('campo',False)
     id = request.POST.get('id',False)
@@ -346,6 +347,7 @@ class EventoForm(forms.ModelForm):
         exclude = ('ficha','codigo','forma_pago')
 
 def putEvento(request):
+    """ Ingreso de un nuevo evento para una ficha """
 
     if request.method == "POST":
         
@@ -361,7 +363,7 @@ def putEvento(request):
             ficha = Ficha.objects.get(persona__rut = rut_deudor)
 
             codigo  = Codigo.objects.get(codigo_id = codigo_id)
-            
+
             event = event_form.save(commit=False)
             event.ficha = ficha
             event.codigo = codigo
@@ -371,6 +373,14 @@ def putEvento(request):
                 event.forma_pago = formapago
 
             event.save()
+
+            #Si el codigo fue "CERRAR FICHA", entonces 
+            # se procede a cerrar la ficha
+            if codigo.descripcion == 'CERRAR FICHA':
+                ficha.esta_cerrado = True
+                ficha.save()
+            
+
             return HttpResponse()
 
         else:
