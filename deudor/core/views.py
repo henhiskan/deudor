@@ -157,10 +157,22 @@ def getFicha(request):
 
 def getCodigo(request):
 
+    #llenado de lista de codigo
+    codigos = Codigo.objects.all()
+
+    if request.user.usuario_set.count() > 0:
+        #Si es procurador
+        usuario = request.user.usuario_set.get()
+        if usuario.get_perfil_display() == 'procurador':
+            codigos = Codigo.objects.filter(~Q(descripcion = 'CERRAR FICHA'))
+
+
+        
+
     data = '({ total: %d, "results": %s })' % \
-        (Codigo.objects.count(),
+        (codigos.count(),
          serializers.serialize('json', 
-                               Codigo.objects.all(), 
+                               codigos,
                                indent=4))
 
     return HttpResponse(data, content_type='application/json')
