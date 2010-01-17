@@ -351,28 +351,36 @@ def putEvento(request):
         
         rut_deudor = request.POST.get('rut_deudor',False)
         codigo_id = request.POST.get('codigo',False)
+
         forma_pago_codigo = request.POST.get('formapago_codigo',False)
 
         event_form = EventoForm(request.POST)
 
         if event_form.is_valid() and rut_deudor:
+
             ficha = Ficha.objects.get(persona__rut = rut_deudor)
 
             codigo  = Codigo.objects.get(codigo_id = codigo_id)
-            formapago = FormaPago.objects.get(codigo= forma_pago_codigo)
-
+            
             event = event_form.save(commit=False)
             event.ficha = ficha
             event.codigo = codigo
-            event.forma_pago = formapago
+
+            if forma_pago_codigo:
+                formapago = FormaPago.objects.get(codigo= forma_pago_codigo)
+                event.forma_pago = formapago
+
             event.save()
             return HttpResponse()
 
         else:
             
-            return HttpResponse('{"success":false,"descripcion":"'+str(event_form.errors)+'"}',
-                                content_type='application/json')
-        
+            data = '({ "success": false, "descripcion": %s })' % \
+                (event_form.errors)
+
+
+            return HttpResponse(data, content_type='application/json')
+
 
 class PersonaForm(forms.ModelForm):
     rut  = forms.CharField(required=False)

@@ -137,11 +137,11 @@ class Evento(models.Model):
     
     descripcion =  models.TextField(max_length=200)
 
-    forma_pago = models.ForeignKey(FormaPago)
-    abono_deuda = models.IntegerField()
+    forma_pago = models.ForeignKey(FormaPago, blank=True, null=True)
+    abono_deuda = models.IntegerField(blank=True, null=True)
 
-    gasto_judicial = models.IntegerField()
-    honorario = models.IntegerField()
+    gasto_judicial = models.IntegerField(blank=True, null=True)
+    honorario = models.IntegerField(blank=True, null=True)
     
 
     def __unicode__(self):

@@ -155,7 +155,7 @@ Ext.onReady(function(){
   {name: 'prox_pago', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.proximo_pago'},
   {name: 'codigo',type:'string',mapping:'fields.codigo.fields.descripcion'},
   {name: 'descripcion',type:'string',mapping:'fields.descripcion'},
-  {name: 'pago',  type:'string',  mapping:'fields.forma_pago.fields.nombre'},
+  {name: 'pago',  type:'string',  mapping:'fields.forma_pago',convert: function(v) {return v ? v.fields.nombre : null;}},
   {name: 'abono', type:'int', mapping:'fields.abono_deuda'},
   {name: 'gasto', type:'int', mapping:'fields.gasto_judicial'},
   {name: 'honorario',type:'int',mapping:'fields.honorario'}
@@ -561,7 +561,8 @@ Ext.onReady(function(){
 		   isUpload: true,
 		   success: function ( result, request) { 
 			e.record.commit();
-	     
+			//refresh para ocultar los id en combobox
+			evento_store.load();
 	},
 			failure: function ( result, request) { 
 			Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
@@ -735,7 +736,7 @@ Ext.onReady(function(){
 			new Ext.form.ComboBox({
 				hiddenName: 'formapago_codigo',
 				id:'formapago',
-				allowBlank: false,
+				allowBlank: true,
 				store: formapago_store,
 				fieldLabel: 'Forma pago',
 				displayField: 'nombre',
@@ -750,7 +751,7 @@ Ext.onReady(function(){
                 {
                     xtype:'numberfield',
 			fieldLabel: 'Abono Deuda',
-			allowBlank: false,
+			allowBlank: true,
 			name: 'abono_deuda'
 
                 }]
@@ -759,13 +760,13 @@ Ext.onReady(function(){
                 items: [{
                     xtype:'numberfield',
                     fieldLabel: 'Gasto Judicial',
-		    allowBlank: false,
+		    allowBlank: true,
                     name: 'gasto_judicial'
 
                 },{
                     xtype:'numberfield',
                     fieldLabel: 'Honorario',
-		    allowBlank: false,
+		    allowBlank: true,
                     name: 'honorario'
 
                 }]
@@ -793,10 +794,10 @@ Ext.onReady(function(){
 				    method:'POST',
 				    url:'putevento',
 				    success: function(){
-				    Ext.MessageBox.alert('Exitoso', 'Evento guardado');
-				    registro_form.getForm().reset();
-				    registro_win.hide();
-				    evento_store.load();
+					Ext.MessageBox.alert('Exitoso', 'Evento guardado');
+					registro_form.getForm().reset();
+					registro_win.hide();
+					evento_store.load();
 				    }})
 			       }
 			else{
