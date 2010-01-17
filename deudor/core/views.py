@@ -139,9 +139,15 @@ def getFicha(request):
         filtro = filtro|Q(persona__apellidos__icontains=query)
         filtro = filtro|Q(persona__rut__icontains=query)
         filtro = filtro|Q(rol__icontains=query)        
-        fichas = Ficha.objects.filter(esta_cerrado=False).filter(filtro)
+
+        if  'cerrado' in query:
+            fichas = Ficha.objects.filter(estado='1')
+        elif 'incobrable' in query:            
+            fichas = Ficha.objects.filter(estado='2')
+        else:
+            fichas = Ficha.objects.filter(estado='0').filter(filtro)
     else:
-        fichas = Ficha.objects.filter(esta_cerrado=False).order_by('persona__apellidos')
+        fichas = Ficha.objects.filter(estado='0').order_by('persona__apellidos')
 
     data = '({ total: %d, "results": %s })' % \
         (fichas.count(),
@@ -389,9 +395,14 @@ def putEvento(request):
             #Si el codigo fue "CERRAR FICHA", entonces 
             # se procede a cerrar la ficha
             if codigo.descripcion == 'CERRAR FICHA':
-                ficha.esta_cerrado = True
+                ficha.estado = '1'
                 ficha.save()
             
+            #Si el codigo fue "INCOBRABLE", entonces
+            # se procede a setear ese campo
+            if codigo.descripcion == 'INCOBRABLE':
+                ficha.estado = '2'
+                ficha.save()
 
             return HttpResponse()
 

@@ -88,6 +88,10 @@ class Tribunal(models.Model):
     class Meta:
         verbose_name_plural = 'tribunales'
 
+ESTADOS = (
+    ('0','activo'),
+    ('1','cerrado'),
+    ('2','incobrable'))
 
 class Ficha(models.Model):
     persona = models.ForeignKey(Persona)
@@ -102,7 +106,7 @@ class Ficha(models.Model):
     deuda_inicial = models.IntegerField(blank=True, null=True)
     procurador = models.ForeignKey(Usuario, blank=True, null=True)
 
-    esta_cerrado = models.BooleanField(default=False)
+    estado = models.CharField(max_length=1,choices=ESTADOS, default='0')
 
     def __unicode__(self):
         if self.rol:
