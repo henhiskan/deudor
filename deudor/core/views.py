@@ -132,20 +132,46 @@ def getDeudor(request):
 def getFicha(request):
     
     query = request.GET.get('query',False)
-    
 
     if query:
-        filtro = Q(persona__nombres__icontains=query)
-        filtro = filtro|Q(persona__apellidos__icontains=query)
-        filtro = filtro|Q(persona__rut__icontains=query)
-        filtro = filtro|Q(rol__icontains=query)        
+        query = query.lower()
+        #Sacar las palabras clave de la query
+        # cerrado e incobrable
+        cerrado = False
+        incobrable = False
+        if 'cerrado' in query:
+            cerrado = True
+            query = query.replace('cerrado','')
 
-        if  'cerrado' in query:
-            fichas = Ficha.objects.filter(estado='1')
-        elif 'incobrable' in query:            
-            fichas = Ficha.objects.filter(estado='2')
+        if 'incobrable' in query:
+            incobrable = True
+            query = query.replace('incobrable','')
+        
+        query = query.strip()
+
+        filtro = False
+        if query:
+            filtro = Q(persona__nombres__icontains=query)
+            filtro = filtro|Q(persona__apellidos__icontains=query)
+            filtro = filtro|Q(persona__rut__icontains=query)
+            filtro = filtro|Q(rol__icontains=query)        
+            
+        if cerrado:
+            if filtro:
+                fichas = Ficha.objects.filter(estado='1').filter(filtro)
+            else:
+                fichas = Ficha.objects.filter(estado='1')
+
+        elif incobrable:
+            if filtro:
+                fichas = Ficha.objects.filter(estado='2').filter(filtro)
+            else:
+                fichas = Ficha.objects.filter(estado='2')
         else:
-            fichas = Ficha.objects.filter(estado='0').filter(filtro)
+            if filtro:
+                fichas = Ficha.objects.filter(estado='0').filter(filtro)
+            else:
+                fichas = Ficha.objects.filter(estado='0')
     else:
         fichas = Ficha.objects.filter(estado='0').order_by('persona__apellidos')
 
