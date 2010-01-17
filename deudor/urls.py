@@ -28,5 +28,6 @@ urlpatterns = patterns('',
     (r'^deleteevento','core.views.deleteEvento'),
     (r'^deleteficha','core.views.deleteFicha'),
     (r'^deudorjs','core.views.getDeudorJs'),
+    (r'^cargarDatos','core.views.cargarDatos'),
                        
 )

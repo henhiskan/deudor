@@ -14,6 +14,10 @@ from core.models import *
 import pyExcelerator
 import tempfile
 import csv
+import datetime
+import time
+import re
+
 
 login_needed = user_passes_test(lambda u: not u.is_anonymous(), login_url='/deudor/login/')
 procurador_needed = user_passes_test(lambda u: not u.is_anonymous() and u.usuario_set.get() and u.usuario_set.get().get_perfil_display() == 'procurador', login_url='/deudor/login/')
@@ -630,5 +634,93 @@ def deleteFicha(request):
         ficha.delete()
     
     return HttpResponse()
+
+
+
+
+def loadData(line):
+    """ Carga Datos al model Django"""
+    row = line.split(',')
+
+    apellidos =  row[1].lower()
+    nombres = row[2].lower()
+
+    rut = row[0]
+    direccion = row[3].lower()
+
+    telefono = row[4]
+    celular = row[5]
+
+    deuda = row[6]
+
+    vencimiento = ""
+    try:
+        vencimiento = datetime.datetime(*time.strptime(row[7],'%Y%m%d')[0:3])
+    except:
+        pass
+
+
+    persona = Persona()
+    persona.rut = rut
+    persona.apellidos = apellidos
+    persona.nombres = nombres
+    persona.domicilio = direccion
+    persona.telefono_fijo = telefono
+    persona.telefono_movil= celular
+
     
+    persona.save()
+
+
+    ficha = Ficha()
+    ficha.persona = persona
+    ficha.deuda_inicial = deuda
+    ficha.fecha_creacion = datetime.datetime.now()
+    ficha.save()
     
+
+
+@login_needed    
+def cargarDatos(request):
+    """ Desde un archivo carga los datos de ficha al sistema """
+    if request.method == 'POST':
+        file = request.FILES['filename']
+        data = csv.reader(file,delimiter=';')
+        lines = ""
+        for row in data:
+            nombres_apellidos = [  a for a in  row[2].split(" ") if a!= ""]
+
+            apellidos =  " ".join(nombres_apellidos[0:2]) 
+            nombres = " ".join(nombres_apellidos[2:])
+
+            rut = int(row[1].strip()[:-1])
+            direccion = "%s %s %s %s " % (row[4].strip().replace(",",""), row[6].strip().replace(",",""), row[5].strip().replace(",",""), row[7].strip().replace(",",""))
+
+            telefono = ""
+            if row[9].strip() != "":
+                telefono = row[8][4:]+"-"+row[9].strip()
+
+            celular = row[16].strip()
+
+            deuda = int(row[17])
+            deuda_int = int(row[18])
+
+            vencimiento = int(row[20])
+    
+            line = "%s,%s,%s,%s,%s,%s,%s,%s" % (rut, apellidos, nombres, direccion, telefono, celular, deuda_int, vencimiento)
+
+            loadData(line)
+
+            lines += "<br>" + line
+
+        return HttpResponse(lines)
+
+    else:
+
+        t = loader.get_template('carga_datos.html')
+        c = Context({
+                'usuario': request.user, })
+        return HttpResponse(t.render(c))
+    
+
+
