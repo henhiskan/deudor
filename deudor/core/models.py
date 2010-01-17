@@ -91,7 +91,7 @@ class Tribunal(models.Model):
 
 class Ficha(models.Model):
     persona = models.ForeignKey(Persona)
-    rol = models.TextField(max_length=100)
+    rol = models.TextField(max_length=100, blank=True, null=True)
     carpeta = models.TextField(max_length=50, blank=True, null=True)
     tribunal = models.ForeignKey(Tribunal , blank=True, null=True)
 

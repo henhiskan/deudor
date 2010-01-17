@@ -915,14 +915,14 @@ Ext.onReady(function(){
 			     mode:'local',
 			     minChars: 0,
 			     name: 'procurador',
-			     allowBlank: false,
+			     allowBlank: true,
 			     triggerAction: 'all'
 			 }),
 
 		     new Ext.form.NumberField({
 			     fieldLabel: 'Rol',
 			     name: 'rol',
-			     allowBlank:false
+			     allowBlank: true
 			 }),
 
 		     new Ext.form.ComboBox({
@@ -936,14 +936,14 @@ Ext.onReady(function(){
 			     mode:'local',
 			     minChars: 0,
 			     name: 'tribunal',
-			     allowBlank: false,
+			     allowBlank: true,
 			     triggerAction: 'all'
 			 }),
 
 		     new Ext.form.TextField({
 			     fieldLabel: 'Carpeta',
 			     name: 'carpeta',
-			     allowBlank:false
+			     allowBlank: true
 			 })
 		     ]
 		 }],
@@ -962,12 +962,17 @@ Ext.onReady(function(){
 				f.submit({
 					method:'POST',
 					url:'putdeudor',
-					success: function(){
-					Ext.MessageBox.alert('Exitoso', 'Datos enviados');
-					deudor_form.getForm().reset();
-					win.hide();
-					ficha_store.load();
-					}})
+					success: function(form, action){
+					    
+					    Ext.MessageBox.alert('Exitoso', 'Datos guardados');
+					    deudor_form.getForm().reset();
+					    win.hide();
+					    ficha_store.load();
+					},
+					failure: function(form, action){
+					    Ext.Msg.alert('error', action.result.descripcion);
+					}
+				    })
 
 				    }
 			    else {

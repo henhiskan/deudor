@@ -223,14 +223,14 @@ def putFicha(request):
     valor = request.POST.get('valor',False)
 
     if valor == "":
-        return HttpResponse('{"success":"error","descripcion":"Ingreso vacio"}', 
+        return HttpResponse('{"success":false,"descripcion":"Ingreso vacio"}', 
                             content_type='application/json')
     
         
     try:
         ficha =  Ficha.objects.get(id=id)
     except:
-        return HttpResponse('{"success":"error","descripcion":"no encontro ficha"}', 
+        return HttpResponse('{"success":false,"descripcion":"no encontro ficha"}', 
                             content_type='application/json')
     
     campo_modificado=""
@@ -259,7 +259,7 @@ def putFicha(request):
 
     ficha.save()
 
-    return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', 
+    return HttpResponse('{"success":"true","modificaciones":"'+campo_modificado +'" }', 
                         content_type='application/json')
 
 
@@ -366,13 +366,11 @@ def putEvento(request):
             event.codigo = codigo
             event.forma_pago = formapago
             event.save()
-            #return HttpResponse('{"result":"sucess"}',
-            #                    content_type='application/json')
             return HttpResponse()
 
         else:
             
-            return HttpResponse('{"result":"error","descripcion":"'+str(event_form.errors)+'"}',
+            return HttpResponse('{"success":false,"descripcion":"'+str(event_form.errors)+'"}',
                                 content_type='application/json')
         
 
@@ -404,22 +402,30 @@ class FichaForm(forms.ModelForm):
 def putDeudor(request):
 
     if request.method == "POST":
+        rut = request.POST.get('rut',False)
+
+        #Busqueda de persona por rut
+        pers = None
+        if rut:
+            pers = Persona.objects.filter(rut=rut.split('-')[0].replace('.',''))
 
         persona_form = PersonaForm(request.POST)
+
         if persona_form.is_valid():
             persona = persona_form.save()
         else:
             
-            return HttpResponse(type(persona_form.errors))
-            #return HttpResponse('{"result":"error", "descripcion":"'+ str(persona_form.errors)+'"}',
-            #                                                    content_type='application/json')
+            #return HttpResponse(str(persona_form.errors))
+            data = '({ "success": false, "descripcion": %s })' % \
+                (persona_form.errors)
 
 
-        #busqueda del tribunal
-        tribunal = Tribunal.objects.get(nombre=request.POST['trib'])
+            return HttpResponse(data, content_type='application/json')
 
-        #busqueda del procurador
-        procurador = Usuario.objects.get(persona__rut = request.POST['proc_rut'])
+
+
+            #return HttpResponse('({"success":false, "descripcion":""})',
+            #                    content_type='application/json')
 
         ficha_form = FichaForm(request.POST)
         if ficha_form.is_valid():
@@ -429,11 +435,23 @@ def putDeudor(request):
 
         ficha.persona = persona
 
-        #Arreglar esto de usuarios
-        usuario = Usuario.objects.all()[0]
-        ficha.creado_por = usuario
-        ficha.procurador = procurador
-        ficha.tribunal = tribunal
+        #Creado por usuario logeado
+        if request.user.usuario_set.count():
+            ficha.creado_por = request.user.usuario_set.get()
+
+        #busqueda del procurador
+        rut_procurador = request.POST.get('proc_rut',False)        
+        if rut_procurador:
+            procurador = Usuario.objects.get(persona__rut = rut_procurador)
+            ficha.procurador = procurador
+
+        #busqueda del tribunal
+        nombre_tribunal = request.POST.get('trib',False)
+        if nombre_tribunal:
+            tribunal = Tribunal.objects.get(nombre=nombre_tribunal)
+
+            ficha.tribunal = tribunal
+
         
         ficha.save()
         
