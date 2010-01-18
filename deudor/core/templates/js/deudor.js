@@ -719,7 +719,7 @@ Ext.onReady(function(){
 				store: codigo_store,
 				allowBlank: false,
 				fieldLabel: 'Codigo',
-				displayField: 'descripcion',
+				displayField: 'codigo',
 				valueField: 'codigo',
 				emptyText:'Seleccione un codigo',
 				mode: 'local',
