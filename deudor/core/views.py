@@ -468,7 +468,8 @@ class FichaForm(forms.ModelForm):
 
     class Meta:
         model = Ficha
-        exclude = ('persona','creado_por','tribunal','procurador')
+        exclude = ('persona','creado_por',
+                   'tribunal','procurador', 'estado')
         
 def putDeudor(request):
 
@@ -490,19 +491,19 @@ def putDeudor(request):
             data = '({ "success": false, "descripcion": %s })' % \
                 (persona_form.errors)
 
-
             return HttpResponse(data, content_type='application/json')
 
 
-
-            #return HttpResponse('({"success":false, "descripcion":""})',
-            #                    content_type='application/json')
-
         ficha_form = FichaForm(request.POST)
+
         if ficha_form.is_valid():
             ficha = ficha_form.save(commit=False)
         else:
-            return HttpResponse(ficha_form.errors)
+             data = '({ "success": false, "descripcion": %s })' % \
+                (ficha_form.errors)
+
+             return HttpResponse(data, 
+                                 content_type='application/json')
 
         ficha.persona = persona
 
@@ -513,7 +514,7 @@ def putDeudor(request):
         #busqueda del procurador
         rut_procurador = request.POST.get('proc_rut',False)        
         if rut_procurador:
-            procurador = Usuario.objects.get(persona__rut = rut_procurador)
+            procurador = Usuario.objects.get(id = rut_procurador)
             ficha.procurador = procurador
 
         #busqueda del tribunal

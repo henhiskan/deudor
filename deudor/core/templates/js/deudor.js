@@ -911,7 +911,7 @@ Ext.onReady(function(){
 			     id:'procurador',
 			     store: procurador_store,
 			     fieldLabel: 'Procurador',
-			     displayField: 'nombres',
+			     displayField: 'nombre',
 			     valueField: 'rut',
 			     emptyText: 'Seleccione un procurador',
 			     mode:'local',
@@ -971,9 +971,10 @@ Ext.onReady(function(){
 					    win.hide();
 					    ficha_store.load();
 					},
-					failure: function(form, action){
-					    Ext.Msg.alert('error', action.result.descripcion);
+					failure: function ( result, request) { 
+					    Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
 					}
+				    
 				    })
 
 				    }
