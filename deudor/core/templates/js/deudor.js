@@ -129,6 +129,10 @@ Ext.onReady(function(){
   {name: 'apellidos',type:'string',mapping:'fields.persona.fields.apellidos'},
   {name: 'rut',type:'string',mapping:'fields.persona.pk'},
   {name: 'rol',type:'string',mapping:'fields.rol'},
+  {name: 'celular',type:'string',mapping:'fields.persona.fields.telefono_movil'},
+  {name: 'tel_fijo',type:'string',mapping:'fields.persona.fields.telefono_fijo'},
+  {name: 'tel_oficina',type:'string',mapping:'fields.persona.fields.telefono_oficina'},
+  {name: 'domicilio',type:'string',mapping:'fields.persona.fields.domicilio'},
   {name: 'carpeta',  type:'string',  mapping:'fields.carpeta'},
   {name: 'tribunal', type:'string', mapping:'fields.tribunal', convert: function(v) {return v ? v.fields.nombre : null;}},
   {name: 'creado_por', type:'string', mapping:'extras.getNombreCreador' },
@@ -293,6 +297,10 @@ Ext.onReady(function(){
        {% endifnotequal %}
 },
   {header: "Rut", width: 25, dataIndex: 'rut', sortable: true},
+  {header: "Celular", width: 25, dataIndex: 'celular', sortable: true},
+  {header: "Telefono fijo", width: 25, dataIndex: 'tel_fijo', sortable: true},
+  {header: "Telefono oficina", width: 25, dataIndex: 'tel_oficina', sortable: true},
+  {header: "Domicilio", width: 25, dataIndex: 'domicilio', sortable: true},
   {header: "Rol", width: 30, dataIndex: 'rol', sortable: true
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
    ,editor: new Ext.form.NumberField({
