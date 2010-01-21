@@ -630,6 +630,37 @@ Ext.onReady(function(){
 	    'Busqueda: ',' ',
 	    search, '    ',
 	    {
+                text:'Print',
+                handler:function(){
+
+
+		    if (!Ext.fly('frmDummy')) {
+			var frm = document.createElement('form');
+			frm.id = 'frmDummy';
+			frm.name = id;
+			frm.className = 'x-hidden';
+			document.body.appendChild(frm);
+		    }
+	   
+
+		    Ext.Ajax.request({
+			    url : 'print' , 
+			    params : { },
+			    method: 'GET',
+			    form: Ext.fly('frmDummy'),
+			    isUpload: true,
+			    success: function ( result, request) { 
+				Ext.MessageBox.alert('Success', 'Data return from the server: '+ result.responseText);
+				
+			    },
+			    failure: function ( result, request) { 
+				Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
+			    }
+	       });
+
+                },
+		    }, '   ',
+	    {
                 text:'Logout',
                 handler:function(){
                     Ext.Ajax.request({
@@ -672,7 +703,8 @@ Ext.onReady(function(){
 			     url:'putreporte',
  		             success: function(result, request){
 				  Ext.MessageBox.alert('Exitoso', result);
-				   }})
+				   }
+			       })
 			       }
 			else{
 			    Ext.MessageBox.alert('Errores', 'Por favor, corriga los errores.');
@@ -1113,7 +1145,7 @@ Ext.onReady(function(){
 	       });
 
 
-	    });
+       });
 
 	
   grid.disable();
