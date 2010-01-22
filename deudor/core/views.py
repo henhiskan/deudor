@@ -179,13 +179,21 @@ def getFicha(request):
     else:
         fichas = Ficha.objects.filter(estado='0').order_by('persona__apellidos')
 
+    #Usando la paginacion
+
+    start = int(request.GET.get('start',0))
+    limit = int(request.GET.get('limit',25))
+    
+    limit += start
+
     data = '({ total: %d, "results": %s })' % \
         (fichas.count(),
          serializers.serialize('json', 
-                               fichas, 
+                               fichas[start:limit], 
                                indent=4, 
                                extras=('getNombreCreador','getNombreProcurador',),
                                relations=({'procurador':{},'tribunal':{},'persona':{},'creado_por':{}})))
+
 
     return HttpResponse(data, content_type='application/json')
     

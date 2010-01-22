@@ -361,8 +361,18 @@ Ext.onReady(function(){
 		viewConfig: {
 			forceFit: true
 		},
-	region: 'center'
+	    region: 'center',
 	    
+  // paging bar on the bottom
+  bbar: new Ext.PagingToolbar({
+	  pageSize: 25,
+	  store: ficha_store,
+	  displayInfo: true,
+	  displayMsg: 'Displaying topics {0} - {1} of {2}',
+	  emptyMsg: "No topics to display",
+
+      })
+
 	});
 
     {% ifnotequal  usuario|getTipoUsuario "procurador" %}
@@ -959,7 +969,7 @@ Ext.onReady(function(){
 			    //chequear si existe un deudor con 
 			    // el rut ingresado
 			    rut = deudor_form.getForm().findField('rut').value.split('-')[0].replace(/\./g,'');
-			    if (ficha_store.find('rut',rut) == -1){
+			    //if (ficha_store.find('rut',rut) == -1){
 
 				f.submit({
 					method:'POST',
@@ -972,17 +982,17 @@ Ext.onReady(function(){
 					    ficha_store.load();
 					},
 					failure: function ( result, request) { 
-					    Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
+					    Ext.MessageBox.alert('Failed', 'Error : '+request.result.descripcion); 
 					}
 				    
 				    })
 
-				    }
-			    else {
+				    //	    }
+				    //else {
 
-				Ext.MessageBox.alert("Error", 
-						     "El rut ingresado pertenece a un deudor registrado");
-			    }
+				    //	Ext.MessageBox.alert("Error", 
+				    //		     "El rut ingresado pertenece a un deudor registrado");
+				    //}
 			}
 			else{
 			    Ext.MessageBox.alert('Errores', 'Por favor, corriga los errores.');
