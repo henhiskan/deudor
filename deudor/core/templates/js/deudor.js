@@ -375,8 +375,8 @@ Ext.onReady(function(){
 	  pageSize: 25,
 	  store: ficha_store,
 	  displayInfo: true,
-	  displayMsg: 'Displaying topics {0} - {1} of {2}',
-	  emptyMsg: "No topics to display",
+	  displayMsg: 'Fichas desplegadas {0} - {1} de {2}',
+	  emptyMsg: "Sin fichas para mostar",
 
       })
 
