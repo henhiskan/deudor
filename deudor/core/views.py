@@ -471,7 +471,10 @@ class PersonaForm(forms.ModelForm):
         
 
 class FichaForm(forms.ModelForm):
-    fecha_creacion = forms.DateField(input_formats=['%d/%m/%Y'],error_messages={'invalid': 'Fecha invalida','required':'Campo Obligatorio'})
+    fecha_creacion = forms.DateField(input_formats=['%d/%m/%Y'],
+                                     required=False,
+                                     error_messages={'invalid': 'Fecha invalida',
+                                                     'required':'Campo Obligatorio'})
 
 
     class Meta:
@@ -537,6 +540,69 @@ def putDeudor(request):
         
         return HttpResponse()
 
+
+def updateDeudor(request):
+    if request.method == "POST":
+        rut = request.POST.get('rut',False)
+
+        #Busqueda de persona por rut
+        pers = None
+        if rut:
+            pers = Persona.objects.filter(rut=rut.split('-')[0].replace('.',''))
+            pers = pers[0]
+            
+        persona_form = PersonaForm(request.POST,
+                                   instance=pers)
+
+        if persona_form.is_valid():
+            persona = persona_form.save()
+        else:            
+            data = '({ "success": false, "descripcion": Error en Persona %s })' % \
+                (persona_form.errors)
+
+            return HttpResponse(data,
+                                content_type='application/json')
+
+
+        #Recuperar la ficha del deudor
+
+        if persona.ficha_set.count() > 0:
+            #Se obtiene la primera ficha. deberia tener solo una
+
+            ficha = persona.ficha_set.all()[0]
+            ficha_form = FichaForm(request.POST, 
+                                   instance=ficha)
+        else:
+            ficha_form = FichaForm(request.POST,{'fecha_creacion':request.POST['fecha']})
+
+        if ficha_form.is_valid():
+            ficha = ficha_form.save(commit=False)
+        else:
+             data = '({ "success": false, "descripcion": %s })' % \
+                (ficha_form.errors)
+
+             return HttpResponse(data, 
+                                 content_type='application/json')
+
+        ficha.fecha_creacion = datetime.datetime(*time.strptime(request.POST['fecha'],'%d/%m/%Y')[0:3])
+
+        #busqueda del procurador
+        #rut_procurador = request.POST.get('proc_rut',False)
+        #if rut_procurador:
+        #    procurador = Usuario.objects.get(id = rut_procurador)
+        #    ficha.procurador = procurador
+
+        #busqueda del tribunal
+        #nombre_tribunal = request.POST.get('trib',False)
+        #if nombre_tribunal:
+        #    tribunal = Tribunal.objects.get(nombre=nombre_tribunal)
+
+        #    ficha.tribunal = tribunal
+
+        ficha.save()
+        
+        return HttpResponse()
+    
 
 
 def getReporte(request):
