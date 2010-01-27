@@ -69,8 +69,6 @@ def getEvento(request):
                             '"results":False})',  mimetype="text/plain", content_type="application/json")
                 
             #@TODO: Solo tomara la primera persona que calce con rut,
-            # Que pasa si existe mas de una persona con mismo rut?
-            # Debiese el sistema permitir esto?
             persona = persona[0]
             #Buscar ficha y luego eventos
             ficha = Ficha.objects.filter(persona=persona)

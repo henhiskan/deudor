@@ -215,7 +215,7 @@ Ext.onReady(function(){
 		  totalProperty: 'total',
 		  id: 'pk'
 	      },[
-  {name: 'codigo', type: 'string', mapping:'fields.codigo_id'},
+  {name: 'codigo', type: 'string', mapping:'pk'},
   {name: 'descripcion', type: 'string', mapping:'fields.descripcion'},
 		 ])
       });
@@ -695,7 +695,7 @@ Ext.onReady(function(){
 				   }})
 			       }
 			else{
-			    Ext.MessageBox.alert('Errores', 'Por favor, corriga los errores.');
+			    Ext.MessageBox.alert('Errores', 'Por favor, corrija los errores.');
 			}
 		    }
 			
