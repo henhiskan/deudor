@@ -585,17 +585,17 @@ def updateDeudor(request):
         ficha.fecha_creacion = datetime.datetime(*time.strptime(request.POST['fecha'],'%d/%m/%Y')[0:3])
 
         #busqueda del procurador
-        #rut_procurador = request.POST.get('proc_rut',False)
-        #if rut_procurador:
-        #    procurador = Usuario.objects.get(id = rut_procurador)
-        #    ficha.procurador = procurador
+        rut_procurador = request.POST.get('proc_rut',False)
+        if rut_procurador:
+            procurador = Usuario.objects.get(id = rut_procurador)
+            ficha.procurador = procurador
 
         #busqueda del tribunal
-        #nombre_tribunal = request.POST.get('trib',False)
-        #if nombre_tribunal:
-        #    tribunal = Tribunal.objects.get(nombre=nombre_tribunal)
+        nombre_tribunal = request.POST.get('trib',False)
+        if nombre_tribunal:
+            tribunal = Tribunal.objects.get(nombre=nombre_tribunal)
 
-        #    ficha.tribunal = tribunal
+            ficha.tribunal = tribunal
 
         ficha.save()
         

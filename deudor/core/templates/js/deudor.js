@@ -232,7 +232,7 @@ Ext.onReady(function(){
 		  id: 'pk'
 	      },[
   {name: 'codigo', type: 'string', mapping:'fields.codigo'},
-  {name: 'nombre', type: 'string', mapping:'fields.nombre'},
+  {name: 'nombre', type: 'string', mapping:'fields.nombre'}
 		 ])
       });
 
@@ -247,7 +247,8 @@ Ext.onReady(function(){
 		  totalProperty: 'total',
 		  id: 'pk'
 	      },[
-  {name: 'nombre', type: 'string', mapping:'fields.nombre'}
+  {name: 'nombre', type: 'string', mapping:'fields.nombre'},
+  {name: 'id', type: 'int', mapping:'pk'}
 		 ])
       }); 
 
@@ -285,77 +286,19 @@ Ext.onReady(function(){
   {header: "Fecha", width: 30, dataIndex: 'fecha', sortable: true, 
    renderer: Ext.util.Format.dateRenderer('d/m/Y')},
 
-  {header: "Nombres", width: 40, dataIndex: 'nombres', sortable: true
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-   ,editor: new Ext.form.TextField({
-	     allowBlank: true
-	 })
-   {% endifnotequal %}
-    },
-  {header: "Apellidos", width: 40, dataIndex: 'apellidos', sortable: true
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-   ,editor: new Ext.form.TextField({
-	     allowBlank: true
-       })
-       {% endifnotequal %}
-},
+  {header: "Nombres", width: 40, dataIndex: 'nombres', sortable: true},
+  {header: "Apellidos", width: 40, dataIndex: 'apellidos', sortable: true},
   {header: "Rut", width: 25, dataIndex: 'rut', sortable: true},
-  {header: "Rol", width: 30, dataIndex: 'rol', sortable: true
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-   ,editor: new Ext.form.NumberField({
-	   allowBlank: true,
-	   allowNegative: false
-       })
-       {% endifnotequal %}
-  },
-    {header: "Carpeta", width: 40, dataIndex: 'carpeta', sortable: true
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-     ,editor: new Ext.form.TextField({
-	     allowBlank: true
-	 })
-       {% endifnotequal %}
-    },
+  {header: "Rol", width: 30, dataIndex: 'rol', sortable: true},
+    {header: "Carpeta", width: 40, dataIndex: 'carpeta', sortable: true},
     {header: "Tribunal", 
      width: 50, 
      dataIndex: 'tribunal', 
      sortable: true
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-     ,editor: new Ext.form.ComboBox({
-                    typeAhead: true,
-                    triggerAction: 'all',
-                    lazyRender: true,
-		    store: tribunal_store,
-		    displayField: 'nombre',
-		    valueField: 'nombre'
-                })
-   {% endifnotequal %}
     },
-  {header: "Creado por", width: 40, dataIndex: 'creado_por', sortable: true
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-      ,editor: new Ext.form.ComboBox({
-                    typeAhead: true,
-                    triggerAction: 'all',
-                    lazyRender: true,
-		    store: usuario_store,
-		    displayField: 'nombre',
-		    valueField: 'rut'
-                })
-   {% endifnotequal %}
-  },
+ 
     {header: "Deuda Inicial", width: 40, dataIndex: 'deuda_inicial', sortable: true},
-  {header: "Procurador", width: 40, dataIndex: 'procurador', sortable: true
-
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-   , editor: new Ext.form.ComboBox({
-                    typeAhead: true,
-                    triggerAction: 'all',
-                    lazyRender: true,
-		    store: procurador_store,
-		    displayField: 'nombre',
-		    valueField: 'rut'
-                })
-   {% endifnotequal %}
-  }
+  {header: "Procurador", width: 40, dataIndex: 'procurador', sortable: true}
 
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
     ,{width: 40, dataIndex: 0, id: 'deleter', sortable: false, fixed: true,
@@ -1074,7 +1017,8 @@ Ext.onReady(function(){
     preview = new Ext.FormPanel({
         id: 'preview',
         region: 'east',
-	width: 300,
+	width: 280,
+	style: {'margin-left': "0px"},
         cls:'preview',
         autoScroll: true,
 	collapsible: true,
@@ -1091,7 +1035,7 @@ Ext.onReady(function(){
          
             defaultType: 'textfield',
             autoHeight: true,
-            bodyStyle: Ext.isIE ? 'padding:0 0 5px 15px;' : 'padding:0px 15px;',
+            bodyStyle: Ext.isIE ? 'padding:0px -10px 5px 15px;' : 'padding:0px 0px;',
             border: false,
             style: {
                 "margin-left": "0px", // when you add custom margin in IE 6...
@@ -1139,17 +1083,40 @@ Ext.onReady(function(){
 		fieldLabel: 'Carpeta',
                 name: 'carpeta',
 		width: 130
-	    },{
-		fieldLabel: 'Tribunal',
-                name: 'tribunal',
-		width: 130,
-		readOnly: true,
-	    },{
-		fieldLabel: 'Procurador',
-                name: 'procurador',
-		readOnly: true,
-		width: 130
-	     },{
+	    },
+
+	     new Ext.form.ComboBox({
+			     hiddenName: 'trib',
+			     id:'tribunal',
+			     store: tribunal_store,
+			     width: 150,
+			     fieldLabel: 'Tribunal',
+			     displayField: 'nombre',
+			     valueField: 'nombre',
+			     emptyText: 'Seleccione un tribunal',
+			     mode:'local',
+			     minChars: 0,
+			     name: 'tribunal',
+			     allowBlank: true,
+			     triggerAction: 'all'
+			 }),
+
+	     new Ext.form.ComboBox({
+			     hiddenName: 'proc_rut',
+			     id:'procurador',
+			     store: procurador_store,
+			     width: 150,
+			     fieldLabel: 'Procurador',
+			     displayField: 'nombre',
+			     valueField: 'rut',
+			     emptyText: 'Seleccione un procurador',
+			     mode:'local',
+			     minChars: 0,
+			     name: 'procurador',
+			     allowBlank: true,
+			     triggerAction: 'all'
+			 }),
+	   {
 		fieldLabel: 'Deuda Inicial',
                 name: 'deuda_inicial',
 		width: 130
