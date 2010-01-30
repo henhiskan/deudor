@@ -712,7 +712,13 @@ def deleteFicha(request):
 
 
 def loadData(line):
-    """ Carga Datos al model Django"""
+    """ Carga Datos al model Django
+    Returns:
+        'persona' Si una nueva persona fue creada
+        'ficha' Si una nueva ficha fue creada
+        'persona ficha' para ambas
+    """
+
     row = line.split(',')
 
     apellidos =  row[1].lower()
@@ -732,26 +738,38 @@ def loadData(line):
     except:
         pass
 
-
+    salida = ''
+    
+    #Buscar en Persona por el rut
+    pers_bus = Persona.objects.filter(rut=rut)
     persona = Persona()
-    persona.rut = rut
-    persona.apellidos = apellidos
-    persona.nombres = nombres
-    persona.domicilio = direccion
-    persona.telefono_fijo = telefono
-    persona.telefono_movil= celular
+    if pers_bus.count() == 0:
+        #No existe la persona
+        persona.rut = rut
+        persona.apellidos = apellidos
+        persona.nombres = nombres
+        persona.domicilio = direccion
+        persona.telefono_fijo = telefono
+        persona.telefono_movil= celular
 
+        persona.save()
+        salida = 'persona '
+    else:
+        #existe la persona, obtener el objeto
+        persona = pers_bus[0]
+
+
+    #buscar si existe ficha persona
+    if persona.ficha_set.count() == 0:
+        ficha = Ficha()
+        ficha.persona = persona
+        ficha.deuda_inicial = deuda
+        ficha.fecha_creacion = datetime.datetime.now()
+        ficha.save()
+        salida += 'ficha'
+    #Si existe entonces no hacer nada
     
-    persona.save()
-
-
-    ficha = Ficha()
-    ficha.persona = persona
-    ficha.deuda_inicial = deuda
-    ficha.fecha_creacion = datetime.datetime.now()
-    ficha.save()
-    
-
+    return salida.strip()
 
 @login_needed    
 def cargarDatos(request):
@@ -782,8 +800,20 @@ def cargarDatos(request):
     
             line = "%s,%s,%s,%s,%s,%s,%s,%s" % (rut, apellidos, nombres, direccion, telefono, celular, deuda_int, vencimiento)
 
-            loadData(line)
+            load_res = loadData(line)
 
+            res = "no creado"
+            if 'ficha' in load_res and \ 
+               'persona' in load_res:
+               res = 'Persona y Ficha creadas'
+
+            if 'ficha' in load_res:
+                res = "  Ficha creada"
+
+            if 'persona' in load_res:
+                res = " Persona creada"
+            
+            line = "%s,%s,%s,%s" % (rut, apellidos, nombres, res)
             lines += "<br>" + line
 
         return HttpResponse(lines)
