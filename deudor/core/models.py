@@ -140,7 +140,7 @@ class Evento(models.Model):
 
     codigo = models.ForeignKey(Codigo)
     
-    descripcion =  models.TextField(max_length=200)
+    descripcion =  models.TextField(max_length=200, blank=True, null=True)
 
     forma_pago = models.ForeignKey(FormaPago, blank=True, null=True)
     abono_deuda = models.IntegerField(blank=True, null=True)

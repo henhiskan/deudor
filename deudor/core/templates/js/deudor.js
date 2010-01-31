@@ -350,7 +350,7 @@ Ext.onReady(function(){
 			ficha_grid.getView().refresh();
 			   },
 		   failure: function ( result, request) { 
-		          Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
+		          Ext.MessageBox.alert('Error', result.responseText); 
 		            }
 			});
 
@@ -380,7 +380,7 @@ Ext.onReady(function(){
 	     
 		    },
 		   failure: function ( result, request) { 
-			Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
+			Ext.MessageBox.alert('Error', result.responseText); 
 		    }
 		});
 	    
@@ -497,7 +497,7 @@ Ext.onReady(function(){
 		        grid.getView().refresh();
 			   },
 		   failure: function ( result, request) { 
-		          Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
+		          Ext.MessageBox.alert('Error', result.responseText); 
 		            }
 			});
 
@@ -528,7 +528,7 @@ Ext.onReady(function(){
 			evento_store.load();
 		    },
 			failure: function ( result, request) { 
-			Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
+			Ext.MessageBox.alert('Error', result.responseText); 
 		    }
 		});
 	    
@@ -741,8 +741,8 @@ Ext.onReady(function(){
 			     fieldLabel: 'Descripción',
 			     name: 'descripcion',
 			     grow: true,
-			     width: 180,
-			     allowBlank: false,
+			     width: 210,
+			     allowBlank: true,
 			     preventScrollbars: true
 			 })
 	    ,{
@@ -764,7 +764,11 @@ Ext.onReady(function(){
 					registro_win.hide();
 					evento_store.load();
 					ficha_store.load();
-				    }})
+				    },
+				    failure: function ( result, request) { 
+					    Ext.MessageBox.alert('Error', request.result.descripcion); 
+				    }
+				})
 			       }
 			else{
 			    Ext.MessageBox.alert('Errores', 'Por favor, corriga los errores.');
@@ -939,7 +943,7 @@ Ext.onReady(function(){
 					    ficha_store.load();
 					},
 					failure: function ( result, request) { 
-					    Ext.MessageBox.alert('Failed', 'Error : '+request.result.descripcion); 
+					    Ext.MessageBox.alert('Error', request.result.descripcion); 
 					}
 				    
 				    })
@@ -1152,7 +1156,7 @@ Ext.onReady(function(){
 					    ficha_store.load();
 					},
 					failure: function ( result, request) { 
-					    Ext.MessageBox.alert('Failed', 'Error : '+request.result.descripcion); 
+					    Ext.MessageBox.alert('Error', request.result.descripcion); 
 					}
 				    
 				    })
@@ -1235,7 +1239,7 @@ Ext.onReady(function(){
 	     
 	},
 			failure: function ( result, request) { 
-	    Ext.MessageBox.alert('Failed', 'Error : '+result.responseText); 
+	    Ext.MessageBox.alert('Error', result.responseText); 
 		   }
 	       });
 

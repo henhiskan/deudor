@@ -803,8 +803,7 @@ def cargarDatos(request):
             load_res = loadData(line)
 
             res = "no creado"
-            if 'ficha' in load_res and \ 
-               'persona' in load_res:
+            if 'ficha' in load_res and 'persona' in load_res:
                res = 'Persona y Ficha creadas'
 
             if 'ficha' in load_res:
