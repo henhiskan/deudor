@@ -289,15 +289,15 @@ Ext.onReady(function(){
   {header: "Nombres", width: 40, dataIndex: 'nombres', sortable: true},
   {header: "Apellidos", width: 40, dataIndex: 'apellidos', sortable: true},
   {header: "Rut", width: 25, dataIndex: 'rut', sortable: true},
-  {header: "Rol", width: 30, dataIndex: 'rol', sortable: true},
-    {header: "Carpeta", width: 40, dataIndex: 'carpeta', sortable: true},
-    {header: "Tribunal", 
+  {header: "Deuda Inicial", width: 40, dataIndex: 'deuda_inicial', sortable: true},
+
+  {header: "Tribunal", 
      width: 50, 
      dataIndex: 'tribunal', 
      sortable: true
     },
- 
-    {header: "Deuda Inicial", width: 40, dataIndex: 'deuda_inicial', sortable: true},
+  {header: "Rol", width: 30, dataIndex: 'rol', sortable: true}, 
+  {header: "Carpeta", width: 40, dataIndex: 'carpeta', sortable: true},
   {header: "Procurador", width: 40, dataIndex: 'procurador', sortable: true}
 
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
