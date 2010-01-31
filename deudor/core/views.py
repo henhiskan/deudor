@@ -733,6 +733,9 @@ def loadData(line):
     deuda = row[6]
 
     vencimiento = ""
+    
+    fecha_creacion = datetime.datetime(*time.strptime(row[8],'%Y%m%d')[0:3])
+
     try:
         vencimiento = datetime.datetime(*time.strptime(row[7],'%Y%m%d')[0:3])
     except:
@@ -764,7 +767,7 @@ def loadData(line):
         ficha = Ficha()
         ficha.persona = persona
         ficha.deuda_inicial = deuda
-        ficha.fecha_creacion = datetime.datetime.now()
+        ficha.fecha_creacion = fecha_creacion
         ficha.save()
         salida += 'ficha'
     #Si existe entonces no hacer nada
@@ -797,20 +800,24 @@ def cargarDatos(request):
             deuda_int = int(row[18])
 
             vencimiento = int(row[20])
+
+            fecha = row[22]
+            
     
-            line = "%s,%s,%s,%s,%s,%s,%s,%s" % (rut, apellidos, nombres, direccion, telefono, celular, deuda_int, vencimiento)
+            line = "%s,%s,%s,%s,%s,%s,%s,%s,%s" % (rut, apellidos, nombres, direccion, telefono, celular, deuda_int, vencimiento, fecha)
 
             load_res = loadData(line)
 
             res = "no creado"
-            if 'ficha' in load_res and 'persona' in load_res:
-               res = 'Persona y Ficha creadas'
 
             if 'ficha' in load_res:
                 res = "  Ficha creada"
 
             if 'persona' in load_res:
                 res = " Persona creada"
+
+            if 'ficha' in load_res and 'persona' in load_res:
+               res = 'Persona y Ficha creadas'
             
             line = "%s,%s,%s,%s" % (rut, apellidos, nombres, res)
             lines += "<br>" + line
