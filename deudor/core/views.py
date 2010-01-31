@@ -90,7 +90,7 @@ def getEvento(request):
                 # Si la query es numero entonces puede 
                 # ser que quieran filtrar por codigo
                 if query.isdigit():
-                    filtro = filtro|Q(abono_deuda=query)
+                    filtro = filtro|Q(capital=query)
 
                 registro = registro.filter( filtro)
 
@@ -352,9 +352,9 @@ def putEventoEdit(request):
         evento.forma_pago = pago
         campo_modificado = "Forma de Pago"
 
-    if campo == 'abono':
-        evento.abono = valor
-        campo_modificado ="Abono"
+    if campo == 'capital':
+        evento.capital = valor
+        campo_modificado ="Capital"
 
     if campo == 'honorario':
         evento.honorario = valor

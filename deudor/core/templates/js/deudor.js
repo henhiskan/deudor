@@ -162,7 +162,7 @@ Ext.onReady(function(){
   {name: 'codigo',type:'string',mapping:'fields.codigo.fields.descripcion'},
   {name: 'descripcion',type:'string',mapping:'fields.descripcion'},
   {name: 'pago',  type:'string',  mapping:'fields.forma_pago',convert: function(v) {return v ? v.fields.nombre : null;}},
-  {name: 'abono', type:'int', mapping:'fields.abono_deuda'},
+  {name: 'capital', type:'int', mapping:'fields.capital'},
   {name: 'gasto', type:'int', mapping:'fields.gasto_judicial'},
   {name: 'honorario',type:'int',mapping:'fields.honorario'}
 	       ])
@@ -436,7 +436,7 @@ Ext.onReady(function(){
    {% endifnotequal %}
     },
 
-    {header: "Abono", width: 40, dataIndex: 'abono', sortable: true
+    {header: "Capital", width: 40, dataIndex: 'capital', sortable: true
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
    , editor: new Ext.form.NumberField({
 	     allowBlank: true,
@@ -453,7 +453,7 @@ Ext.onReady(function(){
 
    {% endifnotequal %}
     },
-    {header: "Gasto", width: 40, dataIndex: 'gasto', sortable: true
+    {header: "Gasto Jud", width: 40, dataIndex: 'gasto', sortable: true
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
      ,editor: new Ext.form.NumberField({
 	     allowBlank: true,
@@ -715,9 +715,9 @@ Ext.onReady(function(){
 			
                 {
                     xtype:'numberfield',
-			fieldLabel: 'Abono Deuda',
+			fieldLabel: 'Capital',
 			allowBlank: true,
-			name: 'abono_deuda'
+			name: 'capital'
 
                 }]
 	   },{
@@ -1017,7 +1017,7 @@ Ext.onReady(function(){
 		'Nombre: {nombre}<br/>',
 		'Rut: {Rut}<br/>',
 		'Deuda: {Deuda}<br/>',
-		'Abono: {Abono}<br/>'
+		'Capital: {Capital}<br/>'
 	];
 	var bookTpl = new Ext.Template(bookTplMarkup);
 
