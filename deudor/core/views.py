@@ -760,7 +760,19 @@ def loadData(line):
     else:
         #existe la persona, obtener el objeto
         persona = pers_bus[0]
-
+        #Ademas ver si es posible actualizar los datos
+        #nombres y apellidos:
+        actualizar = False
+        if nombres != persona.nombres:
+            persona.nombres = nombres
+            actualizar = True
+        if apellidos != persona.apellidos:
+            persona.apellidos = apellidos
+            actualizar = True
+        if actualizar:
+            persona.save()
+            salida = 'persona actualizada '
+            
 
     #buscar si existe ficha persona
     if persona.ficha_set.count() == 0:
@@ -770,7 +782,14 @@ def loadData(line):
         ficha.fecha_creacion = fecha_creacion
         ficha.save()
         salida += 'ficha'
-    #Si existe entonces no hacer nada
+    else:
+        #Si existe ficha, ver si se puede actualizar la fecha
+        # de creacion
+        ficha = persona.ficha_set.get()
+        if ficha.fecha_creacion != fecha_creacion:
+            ficha.fecha_creacion = fecha_creacion
+            ficha.save()
+            salida += "ficha actualizada"
     
     return salida.strip()
 
@@ -782,13 +801,24 @@ def cargarDatos(request):
         data = csv.reader(file,delimiter=';')
         lines = ""
         for row in data:
+            #Ver si el nombre viene con 
+            # Apellidos - Nombres o al reves
+            apellidos = ''
+            nombres = ''
             d_nombres = row[2].decode('latin1').encode('utf8')
-            
-            nombres_apellidos = [  a for a in  d_nombres.split(" ") if a!= ""]
+            nombres_apellidos = \
+                [  a for a in  d_nombres.split(" ") if a!= ""]
 
-            apellidos =  " ".join(nombres_apellidos[0:2]) 
-            nombres = " ".join(nombres_apellidos[2:])
+            if (int(row[1].strip()[:-1]) == int(row[0].strip()[:-2])):
+                #Entonces la data es apellidos-nombres
+                apellidos =  " ".join(nombres_apellidos[0:2]) 
+                nombres = " ".join(nombres_apellidos[2:])
 
+            else:
+                #La data viene nombre-apellidos
+                apellidos =  " ".join(nombres_apellidos[1:]) 
+                nombres = " ".join(nombres_apellidos[:-2])
+                
             rut = int(row[1].strip()[:-1])
 
             direccion = "%s %s %s %s " % (row[4].decode('latin1').encode('utf8').strip().replace(",",""), row[6].decode('latin1').encode('utf8').strip().replace(",",""), row[5].decode('latin1').encode('utf8').strip().replace(",",""), row[7].decode('latin1').encode('utf8').strip().replace(",",""))
@@ -811,7 +841,7 @@ def cargarDatos(request):
 
             load_res = loadData(line)
 
-            res = "no creado"
+            res = "ya existe"
 
             if 'ficha' in load_res:
                 res = "  Ficha creada"
@@ -821,6 +851,9 @@ def cargarDatos(request):
 
             if 'ficha' in load_res and 'persona' in load_res:
                res = 'Persona y Ficha creadas'
+
+            if 'actualizada' in load_res:
+                res = 'Datos actualizados'
             
             line = "%s,%s,%s,%s" % (rut, apellidos, nombres, res)
             lines += "<br>" + line
