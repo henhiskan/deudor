@@ -782,13 +782,16 @@ def cargarDatos(request):
         data = csv.reader(file,delimiter=';')
         lines = ""
         for row in data:
-            nombres_apellidos = [  a for a in  row[2].split(" ") if a!= ""]
+            d_nombres = row[2].decode('latin1').encode('utf8')
+            
+            nombres_apellidos = [  a for a in  d_nombres.split(" ") if a!= ""]
 
             apellidos =  " ".join(nombres_apellidos[0:2]) 
             nombres = " ".join(nombres_apellidos[2:])
 
             rut = int(row[1].strip()[:-1])
-            direccion = "%s %s %s %s " % (row[4].strip().replace(",",""), row[6].strip().replace(",",""), row[5].strip().replace(",",""), row[7].strip().replace(",",""))
+
+            direccion = "%s %s %s %s " % (row[4].decode('latin1').encode('utf8').strip().replace(",",""), row[6].decode('latin1').encode('utf8').strip().replace(",",""), row[5].decode('latin1').encode('utf8').strip().replace(",",""), row[7].decode('latin1').encode('utf8').strip().replace(",",""))
 
             telefono = ""
             if row[9].strip() != "":
