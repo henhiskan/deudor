@@ -147,7 +147,7 @@ class Evento(models.Model):
 
     gasto_judicial = models.IntegerField(blank=True, null=True)
     honorario = models.IntegerField(blank=True, null=True)
-    
+    usuario = models.ForeignKey(Usuario, blank= True, null=True)
 
     def __unicode__(self):
         return self.descripcion

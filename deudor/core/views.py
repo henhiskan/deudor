@@ -398,7 +398,7 @@ class EventoForm(forms.ModelForm):
 
     class Meta:
         model = Evento
-        exclude = ('ficha','codigo','forma_pago')
+        exclude = ('ficha','codigo','forma_pago','usuario')
 
 def putEvento(request):
     """ Ingreso de un nuevo evento para una ficha """
@@ -425,6 +425,11 @@ def putEvento(request):
             if forma_pago_codigo:
                 formapago = FormaPago.objects.get(codigo= forma_pago_codigo)
                 event.forma_pago = formapago
+            
+            #Obtener el Usuario
+            users = Usuario.objects.filter(user=request.user)
+            if users.count() > 0:
+                event.usuario = users[0]
 
             event.save()
 
