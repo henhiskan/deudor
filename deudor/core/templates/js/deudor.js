@@ -724,6 +724,12 @@ Ext.onReady(function(){
 			allowBlank: true,
 			name: 'capital'
 
+                },{
+                    xtype:'numberfield',
+                    fieldLabel: 'Interes',
+		    allowBlank: true,
+                    name: 'interes'
+
                 }]
 	   },{
                 layout: 'form',
@@ -738,6 +744,12 @@ Ext.onReady(function(){
                     fieldLabel: 'Honorario',
 		    allowBlank: true,
                     name: 'honorario'
+
+                },{
+                    xtype:'numberfield',
+                    fieldLabel: 'Costas',
+		    allowBlank: true,
+                    name: 'costas'
 
                 }]
             }]
@@ -988,8 +1000,8 @@ Ext.onReady(function(){
 	     
      registro_win = new Ext.Window({
 	     title: 'Nuevo Registro',
-	     width: 600,
-	     height: 300,
+	     width: 620,
+	     height: 380,
 	     closeAction:'hide',
 	     plain:'true',
 	     layout: 'fit',
