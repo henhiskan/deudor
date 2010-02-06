@@ -76,7 +76,12 @@ Ext.onReady(function(){
   nuevo_registro_btn = new Ext.Action({
 	  text: 'Nuevo Registro',
 	  handler: function(){
-	      registro_win.show();
+	    nom =  ficha_grid.getSelectionModel().getSelected().data.nombres;
+	    apell= ficha_grid.getSelectionModel().getSelected().data.apellidos;
+	    rut =  ficha_grid.getSelectionModel().getSelected().data.rut;
+	    registro_win.setTitle("Rut:" + rut+
+				  " Deudor :"+ nom + ' ' + apell);
+            registro_win.show();
 	  },
 	  iconCls: 'registro',
 	  tooltip:'Agregar un nuevo registro a un deudor',
@@ -91,7 +96,7 @@ Ext.onReady(function(){
 	  handler: function() {
 	      reporte_store.load();	      
 	      if (tabs.getItem('reportes') == null)
-		  {
+		  {   
 		      tabs.add(reporte_grid);
 		      reporte_grid.show();
 		  }
