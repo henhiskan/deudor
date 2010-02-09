@@ -169,7 +169,9 @@ Ext.onReady(function(){
   {name: 'pago',  type:'string',  mapping:'fields.forma_pago',convert: function(v) {return v ? v.fields.nombre : null;}},
   {name: 'capital', type:'int', mapping:'fields.capital'},
   {name: 'gasto', type:'int', mapping:'fields.gasto_judicial'},
-  {name: 'honorario',type:'int',mapping:'fields.honorario'}
+  {name: 'honorario',type:'int',mapping:'fields.honorario'},
+  {name: 'costas',type:'int',mapping:'fields.costas'},
+  {name: 'interes',type:'int',mapping:'fields.interes'}
 	       ])
       });
 
@@ -465,7 +467,24 @@ Ext.onReady(function(){
 	     allowNegative: false
 	 })
    {% endifnotequal %}
+    },
+    
+    {header: "Costas", width: 40, dataIndex: 'costas', sortable: true
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+     ,editor: new Ext.form.NumberField({
+	     allowBlank: true,
+	     allowNegative: false
+	 })
+   {% endifnotequal %}
+    },
+    {header: "Interes", width: 40, dataIndex: 'interes', sortable: true   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+     ,editor: new Ext.form.NumberField({
+	     allowBlank: true,
+	     allowNegative: false
+	 })
+   {% endifnotequal %}
     }
+
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
    ,{width: 40, dataIndex: 0, id: 'deleter', sortable: false, fixed: true,
      renderer: function(v, p, record, rowIndex){

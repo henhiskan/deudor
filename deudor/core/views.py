@@ -336,7 +336,7 @@ def putEventoEdit(request):
         return HttpResponse('{"result":"error","descripcion":"no se encontro evento "}', 
                             content_type='application/json')
     
-    campos_modificados=""
+    campo_modificado = ""
     if campo=='codigo':
         codigo = Codigo.objects.get(codigo_id=valor)
         evento.codigo = codigo
@@ -369,6 +369,13 @@ def putEventoEdit(request):
         ficha.tribunal = tribunal
         campo_modificado = "Tribunal"
 
+    if campo == "costas":
+        evento.costas = valor
+        campo_modificado = "Costas"
+
+    if campo == "interes":
+        evento.interes = valor
+        campo_modificado = "Interes"
 
     evento.save()
 
