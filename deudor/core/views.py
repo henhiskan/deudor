@@ -134,6 +134,9 @@ def getDeudor(request):
 def getFicha(request):
     
     query = request.GET.get('query',False)
+    sort = request.GET.get('sort',False)
+    dir = request.GET.get('dir',False)
+
 
     if query:
         query = query.lower()
@@ -175,7 +178,26 @@ def getFicha(request):
             else:
                 fichas = Ficha.objects.filter(estado='0')
     else:
-        fichas = Ficha.objects.filter(estado='0').order_by('persona__apellidos')
+        fichas = Ficha.objects.filter(estado='0')
+
+    if sort == 'fecha':
+        sort = 'fecha_creacion'
+    if sort == 'nombres':
+        sort = 'persona__nombres'
+    if sort == 'apellidos':
+        sort = 'persona__apellidos'
+    if sort == 'rut':
+        sort = 'persona__rut'
+    if sort == 'procurador':
+        sort = 'procurador__user__first_name'
+    
+    if dir == 'DESC':
+        sort = '-' + sort
+
+    if sort:
+        fichas = fichas.order_by(sort)
+    else:
+        fichas = fichas.order_by('persona__apellidos')
 
     #Usando la paginacion
 

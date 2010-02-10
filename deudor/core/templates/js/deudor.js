@@ -123,7 +123,7 @@ Ext.onReady(function(){
 		  url: '/deudor/getficha',
 		  method: 'GET'
 	      }),
-	    
+	  remoteSort: true,	    
 	  reader: new Ext.data.JsonReader({
 		  root: 'results',
 		  totalProperty: 'total',
@@ -288,6 +288,7 @@ Ext.onReady(function(){
 	    height: '200',
 	    title: 'Deudores',
 	    clicksToEdit: 1,
+
 
 	    columns: [
   {header: "Fecha", width: 30, dataIndex: 'fecha', sortable: true, 
