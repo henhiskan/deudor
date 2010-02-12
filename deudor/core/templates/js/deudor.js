@@ -368,7 +368,21 @@ Ext.onReady(function(){
 
 		
 	       
-	     }
+	    }
+
+
+	    evento_store.baseParams = {rut: record.data.rut};
+	    evento_store.load();
+
+	    // Agregar rut de deudor en formulario de 
+	    // nuevo registro
+	    registro_form.getForm().findField('rut_deudor').setValue(record.data.rut);
+
+	    Ext.getCmp("preview").getForm().loadRecord(record);
+
+
+
+
 	});
     {% endifnotequal %}
 
@@ -872,11 +886,11 @@ Ext.onReady(function(){
 			name: 'apellidos',
 			allowBlank:false
 		    }),
-		new Ext.form.NumberField({
+		new Ext.form.TextField({
 			fieldLabel: 'Telefono Fijo',
 			name: 'telefono_fijo'
 		    }),
-		new Ext.form.NumberField({
+		new Ext.form.TextField({
 			fieldLabel: 'Telefono movil',
 			name: 'telefono_movil'
 		    }),
@@ -899,7 +913,7 @@ Ext.onReady(function(){
 			     allowBlank:false
 			 }),
 		     new Ext.form.DateField({
-			     fieldLabel: 'Fecha creacion',
+			     fieldLabel: 'Fecha asignación',
 			     name: 'fecha_creacion',
 			     allowBlank:false,
 			     format: 'd/m/Y',
@@ -927,7 +941,7 @@ Ext.onReady(function(){
 			     triggerAction: 'all'
 			 }),
 
-		     new Ext.form.NumberField({
+		     new Ext.form.TextField({
 			     fieldLabel: 'Rol',
 			     name: 'rol',
 			     allowBlank: true
@@ -1089,7 +1103,7 @@ Ext.onReady(function(){
             items: [
 	     {
                 xtype: 'datefield',
-                fieldLabel: 'Fecha',
+                fieldLabel: 'Fecha asign',
                 name: 'fecha'
 	     },{
                 fieldLabel: 'Nombres',
@@ -1105,6 +1119,7 @@ Ext.onReady(function(){
 		readOnly:true,
 		width: 130
             },{
+		 xtype: 'textarea',
 		fieldLabel: 'Domicilio',
                 name: 'domicilio',
 		width: 130
@@ -1251,6 +1266,7 @@ Ext.onReady(function(){
 
 
 	    });
+
 
    reporte_grid.on('rowdblclick', function(grid, rowIdx, e) {
 	   record= grid.getStore().getAt(rowIdx);

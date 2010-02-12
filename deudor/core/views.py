@@ -94,7 +94,7 @@ def getEvento(request):
 
                 registro = registro.filter( filtro)
 
-
+            registro = registro.order_by('fecha')
             data = '({ total: %d, "results": %s })' % \
                 (registro.count(),
                  serializers.serialize('json', 
@@ -383,7 +383,7 @@ def putEventoEdit(request):
         campo_modificado ="Honorario"
 
     if campo == 'gasto':
-        evento.gasto = valor
+        evento.gasto_judicial = valor
         campo_modificado ="Gasto"
         
     if campo == 'tribunal':
@@ -399,8 +399,18 @@ def putEventoEdit(request):
         evento.interes = valor
         campo_modificado = "Interes"
 
-    evento.save()
+    evento_mod = evento.save()
 
+
+    #Agregar en bitacora la creacion del nuevo evento
+    cambio = Cambio(descripcion="cambio en " + campo_modificado,
+                    fecha = datetime.datetime.now())
+    
+    users = Usuario.objects.filter(user=request.user)
+    if users.count() > 0:
+        cambio.usuario = users[0]
+    cambio.evento = evento_mod
+    cambio.save()
     return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', 
                         content_type='application/json')
 
@@ -427,7 +437,7 @@ class EventoForm(forms.ModelForm):
 
     class Meta:
         model = Evento
-        exclude = ('ficha','codigo','forma_pago','usuario')
+        exclude = ('ficha','codigo','forma_pago')
 
 def putEvento(request):
     """ Ingreso de un nuevo evento para una ficha """
@@ -454,13 +464,18 @@ def putEvento(request):
             if forma_pago_codigo:
                 formapago = FormaPago.objects.get(codigo= forma_pago_codigo)
                 event.forma_pago = formapago
-            
-            #Obtener el Usuario
+
+            evento = event.save()
+
+            #Agregar en bitacora la creacion del nuevo evento
+            cambio = Cambio(descripcion="Creacion del evento",
+                            fecha = datetime.datetime.now())
+
             users = Usuario.objects.filter(user=request.user)
             if users.count() > 0:
-                event.usuario = users[0]
-
-            event.save()
+                cambio.usuario = users[0]
+            cambio.evento = evento
+            cambio.save()
 
             #Si el codigo fue "CERRAR FICHA", entonces 
             # se procede a cerrar la ficha

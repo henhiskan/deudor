@@ -132,7 +132,6 @@ class FormaPago(models.Model):
         return self.nombre
 
 
-
 class Evento(models.Model):
     ficha = models.ForeignKey(Ficha)
     fecha = models.DateTimeField()
@@ -150,10 +149,17 @@ class Evento(models.Model):
     interes = models.IntegerField(blank=True, null=True)
     costas = models.IntegerField(blank=True, null=True)
 
-    usuario = models.ForeignKey(Usuario, blank= True, null=True)
-
     def __unicode__(self):
         return self.descripcion
+
+
+class Cambio(models.Model):
+
+    evento = models.ForeignKey(Evento,blank=True, null=True)
+    usuario = models.ForeignKey(Usuario, blank= True, null=True)
+    descripcion = models.TextField(max_length=500, blank=True, null=True)
+    fecha = models.DateTimeField(blank=True, null=True)
+
 
 class Reporte(models.Model):
     nombre = models.TextField(max_length=50)
