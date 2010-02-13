@@ -252,7 +252,22 @@ def getFormaPago(request):
                                indent=4))
 
     return HttpResponse(data, content_type='application/json')
+
     
+
+def getReceptor(request):
+    
+    data = '({ total: %d, "results": %s })' % \
+        (Receptor.objects.count(),
+         serializers.serialize('json', 
+                               Receptor.objects.all(), 
+                               indent=4))
+
+    return HttpResponse(data, content_type='application/json')
+
+    
+
+
 def getProcuradores(request):
 
     procuradores = Usuario.objects.filter(perfil = '2')
@@ -464,7 +479,7 @@ def putEvento(request):
             if forma_pago_codigo:
                 formapago = FormaPago.objects.get(codigo= forma_pago_codigo)
                 event.forma_pago = formapago
-
+                
             evento = event.save()
 
             #Agregar en bitacora la creacion del nuevo evento

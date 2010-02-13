@@ -131,6 +131,12 @@ class FormaPago(models.Model):
     def __unicode__(self):
         return self.nombre
 
+class Receptor(models.Model):
+    nombre = models.TextField(max_length=200)
+
+    def __unicode__(self):
+        return self.nombre
+
 
 class Evento(models.Model):
     ficha = models.ForeignKey(Ficha)
@@ -148,6 +154,8 @@ class Evento(models.Model):
     honorario = models.IntegerField(blank=True, null=True)
     interes = models.IntegerField(blank=True, null=True)
     costas = models.IntegerField(blank=True, null=True)
+
+    receptor = models.ForeignKey(Receptor, blank=True, null=True)
 
     def __unicode__(self):
         return self.descripcion

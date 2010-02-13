@@ -13,6 +13,7 @@ var usuario_store;
 var tribunal_store;
 var codigo_store;
 var formapago_store;
+var receptor_store;
 var reporte_store;
 
 var grid;
@@ -240,6 +241,21 @@ Ext.onReady(function(){
 	      },[
   {name: 'codigo', type: 'string', mapping:'fields.codigo'},
   {name: 'nombre', type: 'string', mapping:'fields.nombre'}
+		 ])
+      });
+
+  receptor_store = new Ext.data.Store({
+	  proxy: new Ext.data.HttpProxy({
+		  url: '/deudor/getreceptor',
+		  method: 'GET'
+	      }),
+	  reader: new Ext.data.JsonReader({
+		  root: 'results',
+		  totalProperty: 'total',
+		  id: 'pk'
+	      },[
+  {name: 'nombre', type: 'string', mapping:'fields.nombre'},
+  {name: 'id', type: 'int', mapping:'pk'}
 		 ])
       });
 
@@ -785,7 +801,25 @@ Ext.onReady(function(){
 		    allowBlank: true,
                     name: 'costas'
 
-                }]
+		 },
+
+		    new Ext.form.ComboBox({
+				hiddenName: 'receptor',
+				id:'receptor_id',
+				allowBlank: true,
+				store: receptor_store,
+				fieldLabel: 'Receptor',
+				displayField: 'nombre',
+				valueField: 'id',
+				emptyText:'Seleccione un receptor',
+				mode: 'local',
+				minChars: 0,
+				name: 'receptor_field',
+				triggerAction:'all'
+			})
+
+
+		    ]
             }]
 	     },
 		     new Ext.form.TextArea({
@@ -1034,8 +1068,8 @@ Ext.onReady(function(){
 	     
      registro_win = new Ext.Window({
 	     title: 'Nuevo Registro',
-	     width: 620,
-	     height: 380,
+	     width: 680,
+	     height: 400,
 	     closeAction:'hide',
 	     plain:'true',
 	     layout: 'fit',
@@ -1306,6 +1340,7 @@ Ext.onReady(function(){
   codigo_store.load();
   formapago_store.load();
   procurador_store.load();
+  receptor_store.load();
   tribunal_store.load();
   usuario_store.load();
 });
