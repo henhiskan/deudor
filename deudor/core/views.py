@@ -768,8 +768,9 @@ def deleteFicha(request):
     id_ficha =  request.GET.get('id', False)
     if id_ficha:
         ficha = Ficha.objects.get(id = id_ficha)
+        persona = ficha.persona
         ficha.delete()
-    
+        persona.delete()
     return HttpResponse()
 
 
