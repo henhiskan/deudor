@@ -393,11 +393,7 @@ Ext.onReady(function(){
 	    // Agregar rut de deudor en formulario de 
 	    // nuevo registro
 	    registro_form.getForm().findField('rut_deudor').setValue(record.data.rut);
-
 	    Ext.getCmp("preview").getForm().loadRecord(record);
-
-
-
 
 	});
     {% endifnotequal %}
@@ -845,10 +841,13 @@ Ext.onReady(function(){
 				    url:'putevento',
 				    success: function(){
 					Ext.MessageBox.alert('Exitoso', 'Evento guardado');
+					rut_deudor = registro_form.getForm().findField('rut_deudor').value
 					registro_form.getForm().reset();
+					registro_form.getForm().findField('rut_deudor').setValue(rut_deudor);
+					
 					registro_win.hide();
 					evento_store.load();
-					ficha_store.load();
+					//ficha_store.load();
 				    },
 				    failure: function ( result, request) { 
 					    Ext.MessageBox.alert('Error', request.result.descripcion); 

@@ -163,7 +163,7 @@ class Evento(models.Model):
 
 class Cambio(models.Model):
 
-    evento = models.ForeignKey(Evento,blank=True, null=True)
+    ficha = models.ForeignKey(Ficha,blank=True, null=True)
     usuario = models.ForeignKey(Usuario, blank= True, null=True)
     descripcion = models.TextField(max_length=500, blank=True, null=True)
     fecha = models.DateTimeField(blank=True, null=True)

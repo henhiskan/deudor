@@ -373,6 +373,7 @@ def putEventoEdit(request):
         return HttpResponse('{"result":"error","descripcion":"no se encontro evento "}', 
                             content_type='application/json')
     
+    ficha = evento.ficha
     campo_modificado = ""
     if campo=='codigo':
         codigo = Codigo.objects.get(codigo_id=valor)
@@ -418,13 +419,17 @@ def putEventoEdit(request):
 
 
     #Agregar en bitacora la creacion del nuevo evento
-    cambio = Cambio(descripcion="cambio en " + campo_modificado,
-                    fecha = datetime.datetime.now())
-    
     users = Usuario.objects.filter(user=request.user)
+    usuario = None
     if users.count() > 0:
-        cambio.usuario = users[0]
-    cambio.evento = evento_mod
+        usuario = users[0]
+        
+    cambio = Cambio(descripcion="cambio en " + campo_modificado,
+                    fecha = datetime.datetime.now(),
+                    ficha = ficha,
+                    usuario = usuario)
+    
+
     cambio.save()
     return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', 
                         content_type='application/json')
@@ -483,13 +488,15 @@ def putEvento(request):
             evento = event.save()
 
             #Agregar en bitacora la creacion del nuevo evento
-            cambio = Cambio(descripcion="Creacion del evento",
-                            fecha = datetime.datetime.now())
-
             users = Usuario.objects.filter(user=request.user)
+            usuario = None
             if users.count() > 0:
-                cambio.usuario = users[0]
-            cambio.evento = evento
+                usuario = users[0]
+                
+            cambio = Cambio(descripcion="Creacion del evento",
+                            fecha = datetime.datetime.now(),
+                            usuario = usuario,
+                            ficha = ficha)
             cambio.save()
 
             #Si el codigo fue "CERRAR FICHA", entonces 
