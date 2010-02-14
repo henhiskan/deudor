@@ -13,4 +13,5 @@ admin.site.register(Ficha)#, Generic)
 admin.site.register(FormaPago)
 admin.site.register(Reporte)
 admin.site.register(Evento)#, Generic)
+admin.site.register(Receptor)
 

@@ -69,8 +69,6 @@ def getEvento(request):
                             '"results":False})',  mimetype="text/plain", content_type="application/json")
                 
             #@TODO: Solo tomara la primera persona que calce con rut,
-            # Que pasa si existe mas de una persona con mismo rut?
-            # Debiese el sistema permitir esto?
             persona = persona[0]
             #Buscar ficha y luego eventos
             ficha = Ficha.objects.filter(persona=persona)
@@ -92,11 +90,11 @@ def getEvento(request):
                 # Si la query es numero entonces puede 
                 # ser que quieran filtrar por codigo
                 if query.isdigit():
-                    filtro = filtro|Q(abono_deuda=query)
+                    filtro = filtro|Q(capital=query)
 
                 registro = registro.filter( filtro)
 
-
+            registro = registro.order_by('fecha')
             data = '({ total: %d, "results": %s })' % \
                 (registro.count(),
                  serializers.serialize('json', 
@@ -136,6 +134,9 @@ def getDeudor(request):
 def getFicha(request):
     
     query = request.GET.get('query',False)
+    sort = request.GET.get('sort',False)
+    dir = request.GET.get('dir',False)
+
 
     if query:
         query = query.lower()
@@ -177,15 +178,42 @@ def getFicha(request):
             else:
                 fichas = Ficha.objects.filter(estado='0')
     else:
-        fichas = Ficha.objects.filter(estado='0').order_by('persona__apellidos')
+        fichas = Ficha.objects.filter(estado='0')
+
+    if sort == 'fecha':
+        sort = 'fecha_creacion'
+    if sort == 'nombres':
+        sort = 'persona__nombres'
+    if sort == 'apellidos':
+        sort = 'persona__apellidos'
+    if sort == 'rut':
+        sort = 'persona__rut'
+    if sort == 'procurador':
+        sort = 'procurador__user__first_name'
+    
+    if dir == 'DESC':
+        sort = '-' + sort
+
+    if sort:
+        fichas = fichas.order_by(sort)
+    else:
+        fichas = fichas.order_by('persona__apellidos')
+
+    #Usando la paginacion
+
+    start = int(request.GET.get('start',0))
+    limit = int(request.GET.get('limit',25))
+    
+    limit += start
 
     data = '({ total: %d, "results": %s })' % \
         (fichas.count(),
          serializers.serialize('json', 
-                               fichas, 
+                               fichas[start:limit], 
                                indent=4, 
                                extras=('getNombreCreador','getNombreProcurador',),
                                relations=({'procurador':{},'tribunal':{},'persona':{},'creado_por':{}})))
+
 
     return HttpResponse(data, content_type='application/json')
     
@@ -224,7 +252,22 @@ def getFormaPago(request):
                                indent=4))
 
     return HttpResponse(data, content_type='application/json')
+
     
+
+def getReceptor(request):
+    
+    data = '({ total: %d, "results": %s })' % \
+        (Receptor.objects.count(),
+         serializers.serialize('json', 
+                               Receptor.objects.all(), 
+                               indent=4))
+
+    return HttpResponse(data, content_type='application/json')
+
+    
+
+
 def getProcuradores(request):
 
     procuradores = Usuario.objects.filter(perfil = '2')
@@ -330,7 +373,8 @@ def putEventoEdit(request):
         return HttpResponse('{"result":"error","descripcion":"no se encontro evento "}', 
                             content_type='application/json')
     
-    campos_modificados=""
+    ficha = evento.ficha
+    campo_modificado = ""
     if campo=='codigo':
         codigo = Codigo.objects.get(codigo_id=valor)
         evento.codigo = codigo
@@ -346,16 +390,16 @@ def putEventoEdit(request):
         evento.forma_pago = pago
         campo_modificado = "Forma de Pago"
 
-    if campo == 'abono':
-        evento.abono = valor
-        campo_modificado ="Abono"
+    if campo == 'capital':
+        evento.capital = valor
+        campo_modificado ="Capital"
 
     if campo == 'honorario':
         evento.honorario = valor
         campo_modificado ="Honorario"
 
     if campo == 'gasto':
-        evento.gasto = valor
+        evento.gasto_judicial = valor
         campo_modificado ="Gasto"
         
     if campo == 'tribunal':
@@ -363,9 +407,30 @@ def putEventoEdit(request):
         ficha.tribunal = tribunal
         campo_modificado = "Tribunal"
 
+    if campo == "costas":
+        evento.costas = valor
+        campo_modificado = "Costas"
 
-    evento.save()
+    if campo == "interes":
+        evento.interes = valor
+        campo_modificado = "Interes"
 
+    evento_mod = evento.save()
+
+
+    #Agregar en bitacora la creacion del nuevo evento
+    users = Usuario.objects.filter(user=request.user)
+    usuario = None
+    if users.count() > 0:
+        usuario = users[0]
+        
+    cambio = Cambio(descripcion="cambio en " + campo_modificado,
+                    fecha = datetime.datetime.now(),
+                    ficha = ficha,
+                    usuario = usuario)
+    
+
+    cambio.save()
     return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', 
                         content_type='application/json')
 
@@ -419,8 +484,20 @@ def putEvento(request):
             if forma_pago_codigo:
                 formapago = FormaPago.objects.get(codigo= forma_pago_codigo)
                 event.forma_pago = formapago
+                
+            evento = event.save()
 
-            event.save()
+            #Agregar en bitacora la creacion del nuevo evento
+            users = Usuario.objects.filter(user=request.user)
+            usuario = None
+            if users.count() > 0:
+                usuario = users[0]
+                
+            cambio = Cambio(descripcion="Creacion del evento",
+                            fecha = datetime.datetime.now(),
+                            usuario = usuario,
+                            ficha = ficha)
+            cambio.save()
 
             #Si el codigo fue "CERRAR FICHA", entonces 
             # se procede a cerrar la ficha
@@ -463,7 +540,10 @@ class PersonaForm(forms.ModelForm):
         
 
 class FichaForm(forms.ModelForm):
-    fecha_creacion = forms.DateField(input_formats=['%d/%m/%Y'],error_messages={'invalid': 'Fecha invalida','required':'Campo Obligatorio'})
+    fecha_creacion = forms.DateField(input_formats=['%d/%m/%Y'],
+                                     required=False,
+                                     error_messages={'invalid': 'Fecha invalida',
+                                                     'required':'Campo Obligatorio'})
 
 
     class Meta:
@@ -529,6 +609,69 @@ def putDeudor(request):
         
         return HttpResponse()
 
+
+def updateDeudor(request):
+    if request.method == "POST":
+        rut = request.POST.get('rut',False)
+
+        #Busqueda de persona por rut
+        pers = None
+        if rut:
+            pers = Persona.objects.filter(rut=rut.split('-')[0].replace('.',''))
+            pers = pers[0]
+            
+        persona_form = PersonaForm(request.POST,
+                                   instance=pers)
+
+        if persona_form.is_valid():
+            persona = persona_form.save()
+        else:            
+            data = '({ "success": false, "descripcion": Error en Persona %s })' % \
+                (persona_form.errors)
+
+            return HttpResponse(data,
+                                content_type='application/json')
+
+
+        #Recuperar la ficha del deudor
+
+        if persona.ficha_set.count() > 0:
+            #Se obtiene la primera ficha. deberia tener solo una
+
+            ficha = persona.ficha_set.all()[0]
+            ficha_form = FichaForm(request.POST, 
+                                   instance=ficha)
+        else:
+            ficha_form = FichaForm(request.POST,{'fecha_creacion':request.POST['fecha']})
+
+        if ficha_form.is_valid():
+            ficha = ficha_form.save(commit=False)
+        else:
+             data = '({ "success": false, "descripcion": %s })' % \
+                (ficha_form.errors)
+
+             return HttpResponse(data, 
+                                 content_type='application/json')
+
+        ficha.fecha_creacion = datetime.datetime(*time.strptime(request.POST['fecha'],'%d/%m/%Y')[0:3])
+
+        #busqueda del procurador
+        rut_procurador = request.POST.get('proc_rut',False)
+        if rut_procurador:
+            procurador = Usuario.objects.get(id = rut_procurador)
+            ficha.procurador = procurador
+
+        #busqueda del tribunal
+        nombre_tribunal = request.POST.get('trib',False)
+        if nombre_tribunal:
+            tribunal = Tribunal.objects.get(nombre=nombre_tribunal)
+
+            ficha.tribunal = tribunal
+
+        ficha.save()
+        
+        return HttpResponse()
+    
 
 
 def getReporte(request):
@@ -632,15 +775,22 @@ def deleteFicha(request):
     id_ficha =  request.GET.get('id', False)
     if id_ficha:
         ficha = Ficha.objects.get(id = id_ficha)
+        persona = ficha.persona
         ficha.delete()
-    
+        persona.delete()
     return HttpResponse()
 
 
 
 
 def loadData(line):
-    """ Carga Datos al model Django"""
+    """ Carga Datos al model Django
+    Returns:
+        'persona' Si una nueva persona fue creada
+        'ficha' Si una nueva ficha fue creada
+        'persona ficha' para ambas
+    """
+
     row = line.split(',')
 
     apellidos =  row[1].lower()
@@ -655,31 +805,65 @@ def loadData(line):
     deuda = row[6]
 
     vencimiento = ""
+    
+    fecha_creacion = datetime.datetime(*time.strptime(row[8],'%Y%m%d')[0:3])
+
     try:
         vencimiento = datetime.datetime(*time.strptime(row[7],'%Y%m%d')[0:3])
     except:
         pass
 
-
+    salida = ''
+    
+    #Buscar en Persona por el rut
+    pers_bus = Persona.objects.filter(rut=rut)
     persona = Persona()
-    persona.rut = rut
-    persona.apellidos = apellidos
-    persona.nombres = nombres
-    persona.domicilio = direccion
-    persona.telefono_fijo = telefono
-    persona.telefono_movil= celular
+    if pers_bus.count() == 0:
+        #No existe la persona
+        persona.rut = rut
+        persona.apellidos = apellidos
+        persona.nombres = nombres
+        persona.domicilio = direccion
+        persona.telefono_fijo = telefono
+        persona.telefono_movil= celular
 
+        persona.save()
+        salida = 'persona '
+    else:
+        #existe la persona, obtener el objeto
+        persona = pers_bus[0]
+        #Ademas ver si es posible actualizar los datos
+        #nombres y apellidos:
+        actualizar = False
+        if nombres != persona.nombres:
+            persona.nombres = nombres
+            actualizar = True
+        if apellidos != persona.apellidos:
+            persona.apellidos = apellidos
+            actualizar = True
+        if actualizar:
+            persona.save()
+            salida = 'persona actualizada '
+            
+
+    #buscar si existe ficha persona
+    if persona.ficha_set.count() == 0:
+        ficha = Ficha()
+        ficha.persona = persona
+        ficha.deuda_inicial = deuda
+        ficha.fecha_creacion = fecha_creacion
+        ficha.save()
+        salida += 'ficha'
+    else:
+        #Si existe ficha, ver si se puede actualizar la fecha
+        # de creacion
+        ficha = persona.ficha_set.get()
+        if ficha.fecha_creacion != fecha_creacion:
+            ficha.fecha_creacion = fecha_creacion
+            ficha.save()
+            salida += "ficha actualizada"
     
-    persona.save()
-
-
-    ficha = Ficha()
-    ficha.persona = persona
-    ficha.deuda_inicial = deuda
-    ficha.fecha_creacion = datetime.datetime.now()
-    ficha.save()
-    
-
+    return salida.strip()
 
 @login_needed    
 def cargarDatos(request):
@@ -689,13 +873,27 @@ def cargarDatos(request):
         data = csv.reader(file,delimiter=';')
         lines = ""
         for row in data:
-            nombres_apellidos = [  a for a in  row[2].split(" ") if a!= ""]
+            #Ver si el nombre viene con 
+            # Apellidos - Nombres o al reves
+            apellidos = ''
+            nombres = ''
+            d_nombres = row[2].decode('latin1').encode('utf8')
+            nombres_apellidos = \
+                [  a for a in  d_nombres.split(" ") if a!= ""]
 
-            apellidos =  " ".join(nombres_apellidos[0:2]) 
-            nombres = " ".join(nombres_apellidos[2:])
+            if (int(row[1].strip()[:-1]) == int(row[0].strip()[:-2])):
+                #Entonces la data es apellidos-nombres
+                apellidos =  " ".join(nombres_apellidos[0:2]) 
+                nombres = " ".join(nombres_apellidos[2:])
 
+            else:
+                #La data viene nombre-apellidos
+                apellidos =  " ".join(nombres_apellidos[1:]) 
+                nombres = " ".join(nombres_apellidos[:-2])
+                
             rut = int(row[1].strip()[:-1])
-            direccion = "%s %s %s %s " % (row[4].strip().replace(",",""), row[6].strip().replace(",",""), row[5].strip().replace(",",""), row[7].strip().replace(",",""))
+
+            direccion = "%s %s %s %s " % (row[4].decode('latin1').encode('utf8').strip().replace(",",""), row[6].decode('latin1').encode('utf8').strip().replace(",",""), row[5].decode('latin1').encode('utf8').strip().replace(",",""), row[7].decode('latin1').encode('utf8').strip().replace(",",""))
 
             telefono = ""
             if row[9].strip() != "":
@@ -707,11 +905,29 @@ def cargarDatos(request):
             deuda_int = int(row[18])
 
             vencimiento = int(row[20])
+
+            fecha = row[22]
+            
     
-            line = "%s,%s,%s,%s,%s,%s,%s,%s" % (rut, apellidos, nombres, direccion, telefono, celular, deuda_int, vencimiento)
+            line = "%s,%s,%s,%s,%s,%s,%s,%s,%s" % (rut, apellidos, nombres, direccion, telefono, celular, deuda_int, vencimiento, fecha)
 
-            loadData(line)
+            load_res = loadData(line)
 
+            res = "ya existe"
+
+            if 'ficha' in load_res:
+                res = "  Ficha creada"
+
+            if 'persona' in load_res:
+                res = " Persona creada"
+
+            if 'ficha' in load_res and 'persona' in load_res:
+               res = 'Persona y Ficha creadas'
+
+            if 'actualizada' in load_res:
+                res = 'Datos actualizados'
+            
+            line = "%s,%s,%s,%s" % (rut, apellidos, nombres, res)
             lines += "<br>" + line
 
         return HttpResponse(lines)

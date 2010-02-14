@@ -64,7 +64,7 @@ class Usuario(models.Model):
         return self.user.get_full_name()
 
 class Codigo(models.Model):
-    codigo_id = models.TextField(max_length=60)
+    codigo_id = models.TextField(max_length=60,primary_key=True)
     descripcion = models.TextField(max_length=200)
     
     def __unicode__(self):
@@ -131,6 +131,11 @@ class FormaPago(models.Model):
     def __unicode__(self):
         return self.nombre
 
+class Receptor(models.Model):
+    nombre = models.TextField(max_length=200)
+
+    def __unicode__(self):
+        return self.nombre
 
 
 class Evento(models.Model):
@@ -140,17 +145,29 @@ class Evento(models.Model):
 
     codigo = models.ForeignKey(Codigo)
     
-    descripcion =  models.TextField(max_length=200)
+    descripcion =  models.TextField(max_length=200, blank=True, null=True)
 
     forma_pago = models.ForeignKey(FormaPago, blank=True, null=True)
-    abono_deuda = models.IntegerField(blank=True, null=True)
+    capital = models.IntegerField(blank=True, null=True)
 
     gasto_judicial = models.IntegerField(blank=True, null=True)
     honorario = models.IntegerField(blank=True, null=True)
-    
+    interes = models.IntegerField(blank=True, null=True)
+    costas = models.IntegerField(blank=True, null=True)
+
+    receptor = models.ForeignKey(Receptor, blank=True, null=True)
 
     def __unicode__(self):
         return self.descripcion
+
+
+class Cambio(models.Model):
+
+    ficha = models.ForeignKey(Ficha,blank=True, null=True)
+    usuario = models.ForeignKey(Usuario, blank= True, null=True)
+    descripcion = models.TextField(max_length=500, blank=True, null=True)
+    fecha = models.DateTimeField(blank=True, null=True)
+
 
 class Reporte(models.Model):
     nombre = models.TextField(max_length=50)
