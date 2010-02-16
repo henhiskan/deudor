@@ -36,7 +36,7 @@ var reporte_win;
 var search;
 
 var ficha_ajax;
-
+var summary;
 
 
 {% load tags %}
@@ -150,13 +150,14 @@ Ext.onReady(function(){
       });
 
 
-  evento_store = new Ext.data.Store({
+  evento_store = new Ext.data.GroupingStore({
 	  
 	  proxy: new Ext.data.HttpProxy({
 		  url: '/deudor/getevento',
 		  method: 'GET'
 	      }),
-	    
+	  groupField: 'ficha',
+	  sortInfo: {field: 'fecha',direction: 'ASC'},
 	  reader: new Ext.data.JsonReader({
 		  root: 'results',
 		  totalProperty: 'total',
@@ -172,7 +173,9 @@ Ext.onReady(function(){
   {name: 'gasto', type:'int', mapping:'fields.gasto_judicial'},
   {name: 'honorario',type:'int',mapping:'fields.honorario'},
   {name: 'costas',type:'int',mapping:'fields.costas'},
-  {name: 'interes',type:'int',mapping:'fields.interes'}
+  {name: 'interes',type:'int',mapping:'fields.interes'},
+  {name: 'ficha',type:'int',mapping:'fields.ficha'}
+  
 	       ])
       });
 
@@ -423,6 +426,13 @@ Ext.onReady(function(){
 
 
     // Eventos deudor
+
+    // define a custom summary function
+
+	// utilize custom extension for Group Summary
+    summary = new Ext.ux.grid.GroupSummary();
+
+
      grid = new Ext.grid.EditorGridPanel({
 	     store: evento_store,
 	     height: '200',
@@ -430,13 +440,33 @@ Ext.onReady(function(){
 	     clicksToEdit: 1,
 
         columns: [
-    {header: "Fecha", width: 40, dataIndex: 'fecha', sortable: true,
-     renderer: Ext.util.Format.dateRenderer('d/m/Y')},
+    {header: "Fecha", 
+     width: 40,
+     dataIndex: 'fecha', 
+     sortable: true,
+     renderer: Ext.util.Format.dateRenderer('d/m/Y')
 
-    {header: "Proximo Pago", width: 40, dataIndex: 'prox_pago', sortable: true, 
-     renderer: Ext.util.Format.dateRenderer('d/m/Y')},
+    },
+    {
+	header: 'Ficha',
+	width: 20,
+	sortable: true,
+	dataIndex: 'ficha',
+	renderer: function(v, params, record){
+	    rut = registro_form.getForm().findField('rut_deudor').value;
+	    return "Registros de Persona Rut:" + rut;
+	},
+    },
+
+    {header: "Proximo Pago", 
+     width: 40,
+     dataIndex: 'prox_pago',
+     sortable: true, 
+     renderer: Ext.util.Format.dateRenderer('d/m/Y')
+     },
 
     {header: "Codigo", width: 60, dataIndex: 'codigo', sortable: true
+     
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
      , editor: new Ext.form.ComboBox({
                     typeAhead: true,
@@ -448,7 +478,11 @@ Ext.onReady(function(){
 	 })
 	 {% endifnotequal %}
     },
-    {header: "Descripción", width: 70, dataIndex: 'descripcion', sortable: true
+    {header: "Descripción",
+     width: 70,
+     dataIndex: 'descripcion', 
+     sortable: true
+     
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
      ,editor: new Ext.form.TextField({
 	     allowBlank: true}
@@ -457,6 +491,7 @@ Ext.onReady(function(){
     },
     {header: "Forma Pago", width: 40, 
      dataIndex: 'pago', sortable: true
+     
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
      ,editor: new Ext.form.ComboBox({
                     typeAhead: true,
@@ -470,47 +505,102 @@ Ext.onReady(function(){
    {% endifnotequal %}
     },
 
-    {header: "Capital", width: 40, dataIndex: 'capital', sortable: true
+    {header: "Capital", width: 40, 
+     dataIndex: 'capital', 
+     sortable: true,
+     summaryType: 'sum',
+     summaryRenderer: function(v, params, data){
+	    return '$' + v ;
+	}
+
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
    , editor: new Ext.form.NumberField({
 	     allowBlank: true,
-	     allowNegative: false
+	     allowNegative: false,
+	     allowDecimals: false
        })
    {% endifnotequal %}
     },
-    {header: "Honorario", width: 40, dataIndex: 'honorario', sortable: true
+    {header: "Honorario", width: 40, 
+     dataIndex: 'honorario', 
+     sortable: true,
+     summaryType: 'sum',
+     summaryRenderer: function(v, params, data){
+	    return '$' + v ;
+	}
+
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
    , editor: new Ext.form.NumberField({
 	     allowBlank: true,
-	     allowNegative: false
+	     allowNegative: false,
+	     allowDecimals: false
        })
 
    {% endifnotequal %}
     },
-    {header: "Gasto Jud", width: 40, dataIndex: 'gasto', sortable: true
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-     ,editor: new Ext.form.NumberField({
-	     allowBlank: true,
-	     allowNegative: false
-	 })
-   {% endifnotequal %}
-    },
+
     
-    {header: "Costas", width: 40, dataIndex: 'costas', sortable: true
+    {header: "Costas", width: 40,
+     dataIndex: 'costas', 
+     sortable: true,
+     summaryType: 'sum',
+     summaryRenderer: function(v, params, data){
+	    return '$' + v ;
+	}
+
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
      ,editor: new Ext.form.NumberField({
 	     allowBlank: true,
-	     allowNegative: false
+	     allowNegative: false,
+	     allowDecimals: false
 	 })
    {% endifnotequal %}
     },
-    {header: "Interes", width: 40, dataIndex: 'interes', sortable: true   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+    {header: "Interes", width: 40,
+     dataIndex: 'interes', 
+     sortable: true ,
+     summaryType: 'sum',
+     summaryRenderer: function(v, params, data){
+	    return '$' + v ;
+	}
+  {% ifnotequal  usuario|getTipoUsuario "procurador" %}
      ,editor: new Ext.form.NumberField({
 	     allowBlank: true,
-	     allowNegative: false
+	     allowNegative: false,
+	     allowDecimals: false
+	 })
+   {% endifnotequal %}
+    },
+    {header: "Total", width: 40, 
+     dataIndex: 'total', 
+     summaryType: 'sum',
+     renderer: function(v, params, record){
+	    return '$ ' + ( (record.data.capital==''?0:parseInt(record.data.capital)) +
+			    (record.data.honorario==''?0:parseInt(record.data.honorario)) +
+			    (record.data.costas==''?0:parseInt(record.data.costas)) +
+			    (record.data.interes==''?0:parseInt(record.data.interes)));
+	},
+
+     sortable: true }
+
+    ,{header: "Gasto Jud", width: 40, 
+     id: 'gasto',
+     dataIndex: 'gasto', 
+     sortable: true,
+     summaryType: 'sum',
+     summaryRenderer: function(v, params, data){
+	    return '$' + v ;
+	}
+
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+     ,editor: new Ext.form.NumberField({
+	     allowBlank: true,
+	     allowNegative: false,
+	     allowDecimals: false
 	 })
    {% endifnotequal %}
     }
+
 
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
    ,{width: 40, dataIndex: 0, id: 'deleter', sortable: false, fixed: true,
@@ -519,12 +609,23 @@ Ext.onReady(function(){
        }}
     {% endifnotequal %}
         ],
-		sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
-		viewConfig: {
-			forceFit: true
+    sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
+	     viewConfig: {
+		 forceFit: true
 	     },
-	      region: 'center'
-	});
+    region: 'center',
+
+   view: new Ext.grid.GroupingView({
+	      forceFit: true,
+	      showGroupName: false,
+	      enableNoGroups: false,
+	      enableGroupingMenu: false,
+	      hideGroupedColumn: true
+	      }),
+
+   plugins: summary,
+	     
+	 });
 
 
      {% ifnotequal  usuario|getTipoUsuario "procurador" %}

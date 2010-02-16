@@ -12,6 +12,7 @@
  <script type="text/javascript" src="/js/vTypeRut.js"></script>
  <script type="text/javascript" src="/js/searchField.js"></script>
  <script type="text/javascript" src="/js/ItemDeleter.js"></script>
+ <script type="text/javascript" src="/js/GroupSummary.js"></script>
  <script type="text/javascript" src="/deudor/deudorjs"></script>
 <style type="text/css">
   body {
@@ -41,7 +42,30 @@
   background-image: url(/ext-3.0.3/resources/images/reporte.gif) !important;
   }
 
+.x-grid3-summary-row {
+    border-left:1px solid #fff;
+    border-right:1px solid #fff;
+    color:#333;
+    background: #f1f2f4;
+}
+.x-grid3-summary-row .x-grid3-cell-inner {
+    font-weight:bold;
+    padding-bottom:4px;
+}
+.x-grid3-cell-first .x-grid3-cell-inner {
+    padding-left:16px;
+}
+.x-grid-hide-summary .x-grid3-summary-row {
+    display:none;
+}
+.x-grid3-summary-msg {
+    padding:4px 16px;
+    font-weight:bold;
+}
 
+.x-grid3-body .x-grid3-td-gasto {
+  color: red;
+  }
 
 </style>
 
