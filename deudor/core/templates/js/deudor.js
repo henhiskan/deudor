@@ -168,7 +168,8 @@ Ext.onReady(function(){
   {name: 'prox_pago', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.proximo_pago'},
   {name: 'codigo',type:'string',mapping:'fields.codigo.fields.descripcion'},
   {name: 'descripcion',type:'string',mapping:'fields.descripcion'},
-  {name: 'pago',  type:'string',  mapping:'fields.forma_pago',convert: function(v) {return v ? v.fields.nombre : null;}},
+  {name: 'receptor',  type:'string',  mapping:'fields.receptor',convert: function(v) {return v ? v.fields.nombre : null;}},
+{name: 'pago',  type:'string',  mapping:'fields.forma_pago',convert: function(v) {return v ? v.fields.nombre : null;}},
   {name: 'capital', type:'int', mapping:'fields.capital'},
   {name: 'gasto', type:'int', mapping:'fields.gasto_judicial'},
   {name: 'honorario',type:'int',mapping:'fields.honorario'},
@@ -489,6 +490,22 @@ Ext.onReady(function(){
 	 )
    {% endifnotequal %}
     },
+    {header: "Receptor",
+     dataIndex: 'receptor', 
+     sortable: true
+     
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+     ,editor: new Ext.form.ComboBox({
+	            typeAhead: true,
+                    triggerAction: 'all',
+                    lazyRender: true,
+		    store: receptor_store,
+		    displayField: 'nombre',
+		    valueField: 'id'
+	 })
+   {% endifnotequal %}
+    },
+
     {header: "Forma Pago", width: 40, 
      dataIndex: 'pago', sortable: true
      

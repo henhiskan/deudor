@@ -100,7 +100,7 @@ def getEvento(request):
                  serializers.serialize('json', 
                                        registro, 
                                        indent=4, 
-                               relations=({'codigo':{},'forma_pago':{}})))
+                               relations=({'codigo':{},'forma_pago':{},'receptor':{}})))
 
             return HttpResponse(data, content_type='application/json')
 
@@ -383,7 +383,11 @@ def putEventoEdit(request):
     if campo == 'descripcion':
         evento.descripcion = valor
         campo_modificado = "Descripcion"
-
+    
+    if campo == 'receptor':
+        receptor = Receptor.objects.get(id=valor)
+        evento.receptor = receptor
+        campo_modificado = "Receptor"
 
     if campo == 'pago':
         pago = FormaPago.objects.get(codigo=valor)
