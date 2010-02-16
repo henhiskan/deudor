@@ -64,7 +64,7 @@ class Usuario(models.Model):
         return self.user.get_full_name()
 
 class Codigo(models.Model):
-    codigo_id = models.TextField(max_length=60,primary_key=True)
+    codigo_id = models.IntegerField(primary_key=True)
     descripcion = models.TextField(max_length=200)
     
     def __unicode__(self):

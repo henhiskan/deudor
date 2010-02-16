@@ -232,7 +232,7 @@ def getCodigo(request):
 
 
         
-
+    codigos = codigos.order_by('codigo_id')
     data = '({ total: %d, "results": %s })' % \
         (codigos.count(),
          serializers.serialize('json', 
