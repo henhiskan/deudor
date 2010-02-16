@@ -445,10 +445,12 @@ Ext.onReady(function(){
      width: 40,
      dataIndex: 'fecha', 
      sortable: true,
-     renderer: Ext.util.Format.dateRenderer('d/m/Y')
+     renderer: Ext.util.Format.dateRenderer('d/m/Y'),
+     editor: new Ext.form.DateField({
+	     format: 'd/m/Y'
+	 })
 
-    },
-    {
+    },{
 	header: 'Ficha',
 	width: 20,
 	sortable: true,
@@ -464,12 +466,18 @@ Ext.onReady(function(){
      dataIndex: 'prox_pago',
      sortable: true, 
      renderer: Ext.util.Format.dateRenderer('d/m/Y')
+   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+     ,editor: new Ext.form.DateField({
+	     format: 'd/m/Y'
+	 })
+   {% endifnotequal %}
      },
 
-    {header: "Codigo", width: 60, dataIndex: 'codigo', sortable: true
-     
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-     , editor: new Ext.form.ComboBox({
+    {header: "Codigo", 
+     width: 60,
+     dataIndex: 'codigo', 
+     sortable: true,
+     editor: new Ext.form.ComboBox({
                     typeAhead: true,
                     triggerAction: 'all',
                     lazyRender: true,
@@ -477,25 +485,19 @@ Ext.onReady(function(){
 		    displayField: 'descripcion',
 		    valueField: 'codigo'
 	 })
-	 {% endifnotequal %}
     },
     {header: "Descripción",
      width: 70,
      dataIndex: 'descripcion', 
-     sortable: true
-     
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-     ,editor: new Ext.form.TextField({
+     sortable: true,
+     editor: new Ext.form.TextField({
 	     allowBlank: true}
 	 )
-   {% endifnotequal %}
     },
     {header: "Receptor",
      dataIndex: 'receptor', 
-     sortable: true
-     
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-     ,editor: new Ext.form.ComboBox({
+     sortable: true,
+     editor: new Ext.form.ComboBox({
 	            typeAhead: true,
                     triggerAction: 'all',
                     lazyRender: true,
@@ -503,7 +505,6 @@ Ext.onReady(function(){
 		    displayField: 'nombre',
 		    valueField: 'id'
 	 })
-   {% endifnotequal %}
     },
 
     {header: "Forma Pago", width: 40, 
@@ -609,13 +610,13 @@ Ext.onReady(function(){
 	    return '$' + v ;
 	}
 
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+   {% ifequal  usuario|getTipoUsuario "procurador" %}
      ,editor: new Ext.form.NumberField({
 	     allowBlank: true,
 	     allowNegative: false,
 	     allowDecimals: false
 	 })
-   {% endifnotequal %}
+   {% endifequal %}
     }
 
 

@@ -375,6 +375,17 @@ def putEventoEdit(request):
     
     ficha = evento.ficha
     campo_modificado = ""
+
+    if campo == 'fecha':
+        evento.fecha = datetime.datetime(*time.strptime(valor,
+                                                        '%Y-%m-%dT00:00:00')[0:3])
+        campo_modificado = 'fecha'
+
+    if campo == 'prox_pago':
+        evento.proximo_pago = datetime.datetime(*time.strptime(valor,
+                                                        '%Y-%m-%dT00:00:00')[0:3])
+        campo_modificado = 'proximo pago'
+
     if campo=='codigo':
         codigo = Codigo.objects.get(codigo_id=valor)
         evento.codigo = codigo
