@@ -31,5 +31,6 @@ urlpatterns = patterns('',
     (r'^deleteficha','core.views.deleteFicha'),
     (r'^deudorjs','core.views.getDeudorJs'),
     (r'^cargarDatos','core.views.cargarDatos'),
+    (r'^printFicha','core.views.imprimir'),
                        
 )

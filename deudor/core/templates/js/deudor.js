@@ -91,7 +91,6 @@ Ext.onReady(function(){
 
 
 
-
   reporte_btn = new Ext.Action({
 	  text: 'Reportes',
 	  handler: function() {
@@ -113,6 +112,39 @@ Ext.onReady(function(){
       });
 
 
+
+  imprimir_btn = new Ext.Action({
+	  text: 'Imprimir',
+	  handler: function(){
+
+	      if (!Ext.fly('frmDummyprint')) {
+                      var frm = document.createElement('form');
+                      frm.id = 'frmDummyprint';
+                      frm.name = id;
+                      frm.className = 'x-hidden';
+                      document.body.appendChild(frm);
+	      }
+	   
+
+	      Ext.Ajax.request({
+		      //url:'/deudor/printFicha?ficha_id=' + ficha_grid.getSelectionModel().getSelected().id,
+		      url:'/deudor/printFicha?rut_deudor=' + ficha_grid.getSelectionModel().getSelected().data.rut,
+		      method: 'GET',
+		      form: Ext.fly('frmDummyprint'),
+		      isUpload: true,
+		      success:function( result, request){
+			  Ext.MessageBox.alert("Enviado");
+		      },
+		      failure: function ( result, request) { 
+		          Ext.MessageBox.alert('Error', result.responseText); 
+		      }
+		  });
+
+	  },
+	  iconCls: 'imprimir',
+	  tooltip:'Impresion de Ficha',
+	  scale: 'medium'
+      });
 
 
 ///////////////////////////////////////////
@@ -380,7 +412,7 @@ Ext.onReady(function(){
 		   failure: function ( result, request) { 
 		          Ext.MessageBox.alert('Error', result.responseText); 
 		            }
-			});
+				});
 
 			
 		     }
@@ -761,7 +793,9 @@ Ext.onReady(function(){
 	    nuevo_deudor_btn,
 	    {% endifnotequal %} nuevo_registro_btn, reporte_btn,
 	    'Busqueda: ',' ',
-	    search, '->',
+	    search,
+	    '->',
+	    imprimir_btn,
 	    {
                 text:'Salir',
                 handler:function(){

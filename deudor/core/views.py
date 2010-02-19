@@ -1,3 +1,4 @@
+# coding=UTF-8
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import user_passes_test
 from django.template import Context, loader
@@ -17,6 +18,12 @@ import csv
 import datetime
 import time
 import re
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
+from reportlab.platypus import Spacer, SimpleDocTemplate, Table, TableStyle
+from cStringIO import StringIO
+
 
 
 login_needed = user_passes_test(lambda u: not u.is_anonymous(), login_url='/deudor/login/')
@@ -954,5 +961,194 @@ def cargarDatos(request):
                 'usuario': request.user, })
         return HttpResponse(t.render(c))
     
+@login_needed
+def printFicha(request):
+    """ Dado un id de ficha, se imprime
+    en un HTML con la descripcion de la 
+    ficha y sus eventos"""
+
+    ficha_id = request.GET.get('ficha_id',False)
+    if ficha_id:
+        ficha = Ficha.objects.get(id=ficha_id)
 
 
+        t = loader.get_template('imprimir_ficha.html')
+        c = Context({
+                'ficha': ficha})
+
+        return HttpResponse(t.render(c))
+    else:
+        
+        data = '({ "success": false, "descripcion": "No hay ficha solicitada"})' 
+        return HttpResponse(data, content_type='application/json')
+
+
+    
+
+def imprimir(request):
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.platypus import *
+    from reportlab.lib import colors
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.pagesizes import A4, LETTER, landscape, portrait 
+
+    response = HttpResponse(mimetype='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename=report.pdf'
+
+
+    rut_deudor = request.GET.get('rut_deudor',False)
+
+    if rut_deudor is False:
+        return HttpResponse()
+    
+    persona = Persona.objects.get(rut=rut_deudor)
+    ficha = False
+    if persona.ficha_set.count() > 0:
+        ficha = persona.ficha_set.get()
+    
+    eventos = False
+    if ficha.evento_set.count() > 0:
+        eventos = ficha.evento_set.all()
+        
+
+    #Ahora se comienza a escribir el doc
+
+    # Our container for 'Flowable' objects
+    elements = []
+
+    # A large collection of style sheets pre-made for us
+    styles = getSampleStyleSheet()
+    
+    style = ParagraphStyle(
+        name='Normal',
+        fontName='Helvetica-Bold',
+        fontSize=9,
+        )
+
+    buffer = StringIO()
+    doc = SimpleDocTemplate(response)
+
+    #elements.append(Paragraph("Detalle Ficha " + persona.nombres + " " + persona.apellidos,
+    #                          styles['Title']))
+
+    #elements.append(Paragraph("Nombres: " + persona.nombres + " " + persona.apellidos, style))
+    #elements.append(Spacer(1, 0.2 * inch))
+    #elements.append(Paragraph("Rut: " + persona.get_rut(), style))
+    #elements.append(Spacer(1, 0.2 * inch))
+
+    rol = "Sin información"
+    if ficha.rol:
+        rol = ficha.rol
+    #elements.append(Paragraph("Rol: " + rol, style))
+    #elements.append(Spacer(1, 0.2 * inch))
+
+    carpeta = "Sin información"
+    if ficha.carpeta:
+        carpeta = ficha.carpeta
+    
+    #elements.append(Paragraph("Carpeta: " + carpeta, style))
+    #elements.append(Spacer(1, 0.2 * inch))
+
+    tribunal = "Sin información"
+    if ficha.tribunal:
+        tribunal = ficha.tribunal
+
+    #elements.append(Paragraph("Tribunal: " + tribunal, style))
+    #elements.append(Spacer(1, 0.2 * inch))
+
+    #creado_por = "Sin información"
+    #if ficha.creado_por:
+    #    creado_por = ficha.creado_por
+    ##elements.append(Paragraph("Creado por: "+ creado_por, style))
+    ##elements.append(Spacer(1, 0.2 * inch))
+
+    #elements.append(Paragraph("Fecha creacion: "+ ficha.fecha_creacion.strftime('%d/%m/%Y'), style))
+    #elements.append(Spacer(1, 0.2 * inch))
+
+    #elements.append(Paragraph("Deuda Inicial: $"+str(ficha.deuda_inicial), style))
+    #elements.append(Spacer(1, 0.2 * inch))
+
+    procurador = "Sin información"
+    if ficha.procurador:
+        procurador = ficha.procurador
+
+    deuda_inicial = 0
+    if ficha.deuda_inicial:
+        deuda_inicial = ficha.deuda_inicial 
+
+    estado = "Sin informacion"
+    if ficha.estado :
+        estado= ficha.get_estado_display()
+
+    ##elements.append(Paragraph("Procurador: "+ procurador, style))
+    ##elements.append(Spacer(1, 0.2 * inch))
+
+    ##elements.append(Paragraph("Estado: "+ficha.get_estado_display(), style))
+    ##elements.append(Spacer(1, 0.2 * inch))
+
+
+
+    desc_style = ParagraphStyle(
+        name='Normal',
+        fontName='Helvetica',
+        fontSize=9,
+        )
+
+
+    header = [['Nombre:',persona.nombres + " " + persona.apellidos, 'Rut:', persona.get_rut()]]
+    header.append(['Direccion:',persona.domicilio,'',''])
+    header.append(['Telefono:', persona.telefono_fijo, 'Celular:', persona.telefono_movil ])
+    header.append(['Rol:', rol, 'Carpeta:', carpeta ])
+    header.append(['Tribunal:', tribunal,'Fecha Asignacion:', ficha.fecha_creacion.strftime('%d/%m/%Y')])
+    header.append(['Deuda Inicial:', deuda_inicial,'Estado:',estado ])
+    
+    ts = [
+        ('BOX',(0,0),(-1,-1),1,colors.grey),
+        ('ALIGN', (1,1), (-1,-1), 'LEFT'),
+        ('LINEABOVE', (0,0), (-1,0), 1, colors.black),
+        ('FONT', (0,0), (0,-1), 'Helvetica-Bold'),
+        ('FONT', (1,0), (1,-1), 'Helvetica'),
+        ('FONT', (0,0), (0,-1), 'Helvetica-Bold'),
+        ('FONT', (2,0), (2,-1), 'Helvetica-Bold'),
+        ('FONT', (3,0), (3,-1), 'Helvetica'),
+        ('SPAN', (1,1), (-1,1))]
+
+
+    head_table = Table(header, style=ts)
+    elements.append(head_table)
+    elements.append(Spacer(1, 0.2 * inch))        
+    data = [['Fecha','Codigo','Descripcion','Receptor']]
+
+    for evento in eventos:
+        data.append([evento.fecha.strftime('%d/%m/%Y'),Paragraph(evento.codigo.descripcion, desc_style),Paragraph(evento.descripcion, desc_style), evento.receptor])
+
+
+    ts2 = [
+        ('BACKGROUND',(0,0),(-1,0),colors.grey),
+        ('BOX',(0,0),(-1,-1),2,colors.grey),
+        ('VALIGN',(0,0),(-1,-1), 'TOP'),
+        ('ALIGN', (1,1), (-1,-1), 'LEFT'),
+        ('LINEABOVE', (0,1), (-1,1), 1, colors.grey),
+        ('FONT', (0,0), (-1,0), 'Helvetica-Bold')]
+
+    # The bottom row has one line above, and three lines below of
+    # various colors and spacing.
+    #    ('FONT', (0,-1), (-1,-1), 'Times-Bold')]
+
+    # Create the table with the necessary style, and add it to the
+    # elements list.
+    table = Table(data,  style=ts2)
+    table._argW[0]=0.8*inch
+    table._argW[1]=3*inch
+    table._argW[2]=4*inch
+    table._argW[3]=0.9*inch
+    elements.append(table)
+    elements.append(Spacer(1, 0.2 * inch))
+    
+    # Write the document to disk
+    doc.pagesize = landscape(A4)
+    doc.build(elements) 
+    response.write(buffer.getvalue())
+    buffer.close()
+    return response
+    
