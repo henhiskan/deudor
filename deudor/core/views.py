@@ -992,10 +992,6 @@ def imprimir(request):
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib.pagesizes import A4, LETTER, landscape, portrait 
 
-    response = HttpResponse(mimetype='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename=report.pdf'
-
-
     rut_deudor = request.GET.get('rut_deudor',False)
 
     if rut_deudor is False:
@@ -1009,6 +1005,9 @@ def imprimir(request):
     eventos = False
     if ficha.evento_set.count() > 0:
         eventos = ficha.evento_set.all()
+
+    response = HttpResponse(mimetype='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename=' + rut_deudor + '.pdf'
         
 
     #Ahora se comienza a escribir el doc
