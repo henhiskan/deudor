@@ -48,6 +48,9 @@ Ext.onReady(function(){
   // turn on validation errors beside the field globally
   Ext.form.Field.prototype.msgTarget = 'side';
 
+
+ 
+
   var combo = new Ext.form.ComboBox({
         store: store,
         displayField: 'state',
@@ -150,6 +153,21 @@ Ext.onReady(function(){
 ///////////////////////////////////////////
 //////////// STORES          //////////////
 
+  // SortData Overload
+  Ext.override(Ext.data.Store, {
+    sortData : function(f, direction){
+        direction = direction || 'ASC';
+        var st = this.fields.get(f).sortType;
+        var fn = function(r1, r2){
+            var v1 = st(r1.data[f], r1), v2 = st(r2.data[f], r2);
+            return v1 > v2 ? 1 : (v1 < v2 ? -1 : 0);
+        };
+        this.data.sort(direction, fn);
+        if(this.snapshot && this.snapshot != this.data){
+            this.snapshot.sort(direction, fn);
+        }
+	  }
+  });
 
   ficha_store = new Ext.data.Store({
 	  proxy: new Ext.data.HttpProxy({
@@ -189,14 +207,25 @@ Ext.onReady(function(){
 		  method: 'GET'
 	      }),
 	  groupField: 'ficha',
-	  sortInfo: {field: 'fecha',direction: 'ASC'},
+	  sortInfo: {field: 'fecha',direction: 'DESC'},
 	  reader: new Ext.data.JsonReader({
 		  root: 'results',
 		  totalProperty: 'total',
 		  id:'pk'
 		  
            }, [
-  {name: 'fecha', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.fecha'},
+  {name: 'fecha', 
+   type:'date',
+   dateFormat:'Y-m-d H:i:s',  
+   mapping: 'fields.fecha', 
+   sortType:  function(v, r){
+     fecha = r.get('fecha');
+     fecha_creacion = r.get('fecha_creacion');  
+     return  (fecha!=''?fecha.dateFormat('YmdHis'):'') +
+     (fecha_creacion!=''?fecha_creacion.dateFormat('YmdHis'):'');
+      }
+  },
+  {name: 'fecha_creacion', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.fecha_creacion'},
   {name: 'prox_pago', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.proximo_pago'},
   {name: 'codigo',type:'string',mapping:'fields.codigo.fields.descripcion'},
   {name: 'descripcion',type:'string',mapping:'fields.descripcion'},

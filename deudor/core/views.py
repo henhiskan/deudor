@@ -25,7 +25,6 @@ from reportlab.platypus import Spacer, SimpleDocTemplate, Table, TableStyle
 from cStringIO import StringIO
 
 
-
 login_needed = user_passes_test(lambda u: not u.is_anonymous(), login_url='/deudor/login/')
 procurador_needed = user_passes_test(lambda u: not u.is_anonymous() and u.usuario_set.get() and u.usuario_set.get().get_perfil_display() == 'procurador', login_url='/deudor/login/')
 procurador_needed = user_passes_test(lambda u: not u.is_anonymous() and u.usuario_set.get() and u.usuario_set.get().get_perfil_display() == 'procurador', login_url='/deudor/login/')
@@ -101,7 +100,7 @@ def getEvento(request):
 
                 registro = registro.filter( filtro)
 
-            registro = registro.order_by('fecha')
+            registro = registro.order_by('fecha','fecha_creacion')
             data = '({ total: %d, "results": %s })' % \
                 (registro.count(),
                  serializers.serialize('json', 
@@ -479,7 +478,7 @@ class EventoForm(forms.ModelForm):
 
     class Meta:
         model = Evento
-        exclude = ('ficha','codigo','forma_pago')
+        exclude = ('ficha','codigo','forma_pago','fecha_creacion')
 
 def putEvento(request):
     """ Ingreso de un nuevo evento para una ficha """
@@ -502,7 +501,8 @@ def putEvento(request):
             event = event_form.save(commit=False)
             event.ficha = ficha
             event.codigo = codigo
-
+            event.fecha_creacion = datetime.datetime.now()
+            
             if forma_pago_codigo:
                 formapago = FormaPago.objects.get(codigo= forma_pago_codigo)
                 event.forma_pago = formapago
