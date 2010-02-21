@@ -208,7 +208,7 @@ Ext.onReady(function(){
 		  method: 'GET'
 	      }),
 	  groupField: 'ficha',
-	  sortInfo: {field: 'fecha',direction: 'DESC'},
+	  sortInfo: {field: 'fecha',direction: 'ASC'},
 	  reader: new Ext.data.JsonReader({
 		  root: 'results',
 		  totalProperty: 'total',
@@ -221,9 +221,9 @@ Ext.onReady(function(){
    mapping: 'fields.fecha', 
    sortType:  function(v, r){
      fecha = r.get('fecha');
-     fecha_creacion = r.get('fecha_creacion');  
-     return  (fecha!=''?fecha.dateFormat('YmdHis'):'') +
-     (fecha_creacion!=''?fecha_creacion.dateFormat('YmdHis'):'');
+     fecha_creacion = r.get('fecha_creacion');
+     return  (fecha!=''?fecha.dateFormat('YmdHi'):'') +
+     (fecha_creacion!=''?fecha_creacion.dateFormat('YmdHi'):'000000000000');
       }
   },
   {name: 'fecha_creacion', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.fecha_creacion'},
