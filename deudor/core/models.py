@@ -88,6 +88,15 @@ class Tribunal(models.Model):
     class Meta:
         verbose_name_plural = 'tribunales'
 
+class SistemaOrigen(models.Model):
+    nombre = models.TextField(max_length=100)
+    
+    def __unicode__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name_plural = "Sistemas de Origen"
+
 ESTADOS = (
     ('0','activo'),
     ('1','cerrado'),
@@ -107,6 +116,7 @@ class Ficha(models.Model):
     procurador = models.ForeignKey(Usuario, blank=True, null=True)
 
     estado = models.CharField(max_length=1,choices=ESTADOS, default='0')
+    sistema_origen = models.ForeignKey(SistemaOrigen, blank=True, null=True)
 
     def __unicode__(self):
         if self.rol:
@@ -137,6 +147,8 @@ class Receptor(models.Model):
     def __unicode__(self):
         return self.nombre
 
+    class Meta:
+        verbose_name_plural = "Receptores"
 
 class Evento(models.Model):
     ficha = models.ForeignKey(Ficha)

@@ -195,7 +195,8 @@ Ext.onReady(function(){
   {name: 'tribunal', type:'string', mapping:'fields.tribunal', convert: function(v) {return v ? v.fields.nombre : null;}},
   {name: 'creado_por', type:'string', mapping:'extras.getNombreCreador' },
   {name: 'deuda_inicial',type:'int',mapping:'fields.deuda_inicial'},
-  {name: 'procurador',type:'string',mapping:'extras.getNombreProcurador' }
+  {name: 'procurador',type:'string',mapping:'extras.getNombreProcurador'},
+  {name: 'sistema_origen',type:'string',mapping:'fields.sistema_origen' }
 		  ])
       });
 
@@ -357,6 +358,21 @@ Ext.onReady(function(){
       }); 
 
 
+  sist_orig_store = new Ext.data.Store({
+	  proxy: new Ext.data.HttpProxy({
+		  url: '/deudor/getsistorig',
+		  method: 'GET'
+	      }),
+	  reader: new Ext.data.JsonReader({
+		  root: 'results',
+		  totalProperty: 'total',
+		  id: 'pk'
+	      },[
+  {name: 'nombre', type: 'string', mapping:'fields.nombre'},
+  {name: 'id', type: 'int', mapping:'pk'}
+		 ])
+      }); 
+
 
     ///////////////////////////////////
     //           GRIDS
@@ -446,9 +462,6 @@ Ext.onReady(function(){
 			
 		     }
 		 });
-
-		
-	       
 	    }
 
 
@@ -459,6 +472,9 @@ Ext.onReady(function(){
 	    // nuevo registro
 	    registro_form.getForm().findField('rut_deudor').setValue(record.data.rut);
 	    Ext.getCmp("preview").getForm().loadRecord(record);
+
+	    // Activar el boton de imprimir
+	    imprimir_btn.enable();
 
 	});
     {% endifnotequal %}
@@ -736,7 +752,7 @@ Ext.onReady(function(){
 		     }
 		 });
 
-	     }
+	 }
 	 });
 
      {% endifnotequal %}
@@ -764,9 +780,6 @@ Ext.onReady(function(){
 		});
 	    
 	 });
-
-
-
 
 
      reporte_grid = new Ext.grid.GridPanel({
@@ -1133,7 +1146,22 @@ Ext.onReady(function(){
 			     allowBlank:false,
 			     format: 'd/m/Y',
 			     value: (new Date()).format('d/m/Y')
-			 })]
+			 }),
+		     new Ext.form.ComboBox({
+			     hiddenName: 'sistema_origen',
+			     id:'sistorigen',
+			     store: sist_orig_store,
+			     fieldLabel: 'Sistema Origen',
+			     displayField: 'nombre',
+			     valueField: 'id',
+			     emptyText: 'Sistema origen',
+			     mode:'local',
+			     minChars: 0,
+			     name: 'sistema_origen',
+			     allowBlank: true,
+			     triggerAction: 'all'
+			 })
+		     ]
 
 		 },{
 	      layout:'form',
@@ -1393,6 +1421,23 @@ Ext.onReady(function(){
 			     allowBlank: true,
 			     triggerAction: 'all'
 			 }),
+
+	     new Ext.form.ComboBox({
+			     hiddenName: 'sistema_origen',
+			     id:'sistema_origen_update',
+			     store: sist_orig_store,
+			     width: 150,
+			     fieldLabel: 'Sist. Origen',
+			     displayField: 'nombre',
+			     valueField: 'id',
+			     emptyText: 'Sist. Origen',
+			     mode:'local',
+			     minChars: 0,
+			     name: 'sist_orig_update',
+			     allowBlank: true,
+			     triggerAction: 'all'
+			 }),
+
 	   {
 		fieldLabel: 'Deuda Inicial',
                 name: 'deuda_inicial',
@@ -1464,10 +1509,10 @@ Ext.onReady(function(){
 
 	// sm, rowIdx, r
 	ficha_grid.on('rowdblclick', function(grid_selected, rowIdx, e) {
-
+		
 		record= grid_selected.getStore().getAt(rowIdx);
 		grid.enable();
-
+		imprimir_btn.enable();
 		nuevo_registro_btn.enable();
 		evento_store.baseParams = {rut: record.data.rut};
 		evento_store.load();
@@ -1517,6 +1562,8 @@ Ext.onReady(function(){
 	
   grid.disable();
   nuevo_registro_btn.disable();
+  imprimir_btn.disable();
+
   ficha_store.load();
   codigo_store.load();
   formapago_store.load();
@@ -1524,4 +1571,5 @@ Ext.onReady(function(){
   receptor_store.load();
   tribunal_store.load();
   usuario_store.load();
+  sist_orig_store.load();
 });

@@ -311,7 +311,18 @@ def getTribunales(request):
 
     return HttpResponse(data, content_type='application/json')
 
+def getSistOrigen(request):
+    """ Devuelve la lista de los sistemas
+    de origenes en donde proviene la Data """
 
+    data = '({ total: %d, "results": %s })' % \
+        (SistemaOrigen.objects.count(),
+         serializers.serialize('json', 
+                               SistemaOrigen.objects.all(), 
+                               indent=4))
+
+    return HttpResponse(data, content_type='application/json')
+    
 
 def putFicha(request):
     """ Ingreso de una nueva ficha deudor """
@@ -353,7 +364,6 @@ def putFicha(request):
         tribunal = Tribunal.objects.get(nombre=valor)
         ficha.tribunal = tribunal
         campo_modificado = "Tribunal"
-
 
     ficha.save()
 
