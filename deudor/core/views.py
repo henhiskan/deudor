@@ -100,7 +100,7 @@ def getEvento(request):
 
                 registro = registro.filter( filtro)
 
-            registro = registro.order_by('fecha','fecha_creacion')
+            registro = registro.order_by('fecha','orden')
             data = '({ total: %d, "results": %s })' % \
                 (registro.count(),
                  serializers.serialize('json', 
@@ -402,6 +402,10 @@ def putEventoEdit(request):
                                                         '%Y-%m-%dT00:00:00')[0:3])
         campo_modificado = 'proximo pago'
 
+    if campo == 'orden':
+        evento.orden = valor
+        campo_modificado = "orden"
+
     if campo=='codigo':
         codigo = Codigo.objects.get(codigo_id=valor)
         evento.codigo = codigo
@@ -488,7 +492,7 @@ class EventoForm(forms.ModelForm):
 
     class Meta:
         model = Evento
-        exclude = ('ficha','codigo','forma_pago','fecha_creacion')
+        exclude = ('ficha','codigo','forma_pago')
 
 def putEvento(request):
     """ Ingreso de un nuevo evento para una ficha """
@@ -499,7 +503,7 @@ def putEvento(request):
         codigo_id = request.POST.get('codigo',False)
 
         forma_pago_codigo = request.POST.get('formapago_codigo',False)
-
+        
         event_form = EventoForm(request.POST)
 
         if event_form.is_valid() and rut_deudor:
@@ -511,7 +515,6 @@ def putEvento(request):
             event = event_form.save(commit=False)
             event.ficha = ficha
             event.codigo = codigo
-            event.fecha_creacion = datetime.datetime.now()
             
             if forma_pago_codigo:
                 formapago = FormaPago.objects.get(codigo= forma_pago_codigo)
@@ -1019,7 +1022,7 @@ def imprimir(request):
     
     eventos = False
     if ficha.evento_set.count() > 0:
-        eventos = ficha.evento_set.all().order_by('fecha','fecha_creacion')
+        eventos = ficha.evento_set.all().order_by('fecha','orden')
 
     response = HttpResponse(mimetype='application/pdf')
     response['Content-Disposition'] = 'attachment; filename=' + rut_deudor + '.pdf'

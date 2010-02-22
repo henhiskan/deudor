@@ -162,7 +162,7 @@ class Receptor(models.Model):
 class Evento(models.Model):
     ficha = models.ForeignKey(Ficha)
     fecha = models.DateTimeField()
-    fecha_creacion = models.DateTimeField(blank=True, null=True)
+    orden = models.IntegerField(blank=True, null=True)
     proximo_pago = models.DateTimeField(blank=True, null=True)
 
     codigo = models.ForeignKey(Codigo)

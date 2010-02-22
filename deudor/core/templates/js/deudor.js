@@ -222,12 +222,11 @@ Ext.onReady(function(){
    mapping: 'fields.fecha', 
    sortType:  function(v, r){
      fecha = r.get('fecha');
-     fecha_creacion = r.get('fecha_creacion');
-     return  (fecha!=''?fecha.dateFormat('YmdHi'):'') +
-     (fecha_creacion!=''?fecha_creacion.dateFormat('YmdHi'):'000000000000');
+     orden = r.get('orden');
+     return  (fecha!=''?fecha.dateFormat('YmdHi'):'') + orden;
       }
   },
-  {name: 'fecha_creacion', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.fecha_creacion'},
+  {name: 'orden', type:'int',  mapping: 'fields.orden'},
   {name: 'prox_pago', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.proximo_pago'},
   {name: 'codigo',type:'string',mapping:'fields.codigo.fields.descripcion'},
   {name: 'descripcion',type:'string',mapping:'fields.descripcion'},
@@ -389,7 +388,7 @@ Ext.onReady(function(){
 
 
 	    columns: [
-  {header: "Fecha", width: 30, dataIndex: 'fecha', sortable: true, 
+  {header: "Fecha", width: 45, dataIndex: 'fecha', sortable: true, 
    renderer: Ext.util.Format.dateRenderer('d/m/Y')},
 
   {header: "Nombres", width: 40, dataIndex: 'nombres', sortable: true},
@@ -512,7 +511,7 @@ Ext.onReady(function(){
     summary = new Ext.ux.grid.GroupSummary();
 
 
-     grid = new Ext.grid.EditorGridPanel({
+    grid = new Ext.grid.EditorGridPanel({
 	     store: evento_store,
 	     height: '200',
 	     title: 'Registros',
@@ -520,7 +519,7 @@ Ext.onReady(function(){
 
         columns: [
     {header: "Fecha", 
-     width: 40,
+     width: 75,
      dataIndex: 'fecha', 
      sortable: true,
      renderer: Ext.util.Format.dateRenderer('d/m/Y'),
@@ -538,6 +537,20 @@ Ext.onReady(function(){
 	    return "Registros de Persona Rut:" + rut;
 	},
     },
+
+    {
+     header: "#", 
+     width: 20, 
+     dataIndex: 'orden', 
+     sortable: true,
+     editor: new Ext.form.NumberField({
+	     allowBlank: true,
+	     allowNegative: false,
+	     allowDecimals: false
+	 })
+    }
+
+    ,
 
     {header: "Proximo Pago", 
      width: 40,
@@ -565,7 +578,7 @@ Ext.onReady(function(){
 	 })
     },
     {header: "Descripción",
-     width: 70,
+     width: 90,
      dataIndex: 'descripcion', 
      sortable: true,
      editor: new Ext.form.TextField({
@@ -575,6 +588,7 @@ Ext.onReady(function(){
     {header: "Receptor",
      dataIndex: 'receptor', 
      sortable: true,
+     width: 50,
      editor: new Ext.form.ComboBox({
 	            typeAhead: true,
                     triggerAction: 'all',
@@ -585,7 +599,7 @@ Ext.onReady(function(){
 	 })
     },
 
-    {header: "Forma Pago", width: 40, 
+    {header: "Forma Pago", width: 70, 
      dataIndex: 'pago', sortable: true
      
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
@@ -688,13 +702,11 @@ Ext.onReady(function(){
 	    return '$' + v ;
 	}
 
-   {% ifequal  usuario|getTipoUsuario "procurador" %}
      ,editor: new Ext.form.NumberField({
 	     allowBlank: true,
 	     allowNegative: false,
 	     allowDecimals: false
 	 })
-   {% endifequal %}
     }
 
 
@@ -915,14 +927,16 @@ Ext.onReady(function(){
 			format: 'd/m/Y',
 			value: (new Date()).format('d/m/Y')
 			    }),
-
+    
+                       {% ifnotequal  usuario|getTipoUsuario "procurador" %}
 			new Ext.form.DateField({
 				fieldLabel: 'Fecha Proximo Pago',
 				name: 'proximo_pago',
 				format: 'd/m/Y'
 				//value: (new Date()).format('d/m/Y')
 			    }),
-			
+                        {% endifnotequal %}
+
 			new Ext.form.ComboBox({
 				hiddenName: 'codigo',
 				id:'combo',
@@ -942,9 +956,12 @@ Ext.onReady(function(){
 
 			    })
 			]
-            },{
+            },
+             {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+               {
                 layout: 'form',
                 items: [
+               
 			new Ext.form.ComboBox({
 				hiddenName: 'formapago_codigo',
 				id:'formapago',
@@ -973,7 +990,9 @@ Ext.onReady(function(){
                     name: 'interes'
 
                 }]
-	   },{
+	       },
+               {% endifnotequal %}
+		{
                 layout: 'form',
                 items: [{
                     xtype:'numberfield',
@@ -981,7 +1000,9 @@ Ext.onReady(function(){
 		    allowBlank: true,
                     name: 'gasto_judicial'
 
-                },{
+                }
+            {% ifnotequal  usuario|getTipoUsuario "procurador" %}    
+		,{
                     xtype:'numberfield',
                     fieldLabel: 'Honorario',
 		    allowBlank: true,
@@ -993,7 +1014,9 @@ Ext.onReady(function(){
 		    allowBlank: true,
                     name: 'costas'
 
-		 },
+		 }
+             {% endifnotequal %}
+		,
 
 		    new Ext.form.ComboBox({
 				hiddenName: 'receptor',
