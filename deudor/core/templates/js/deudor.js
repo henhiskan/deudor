@@ -145,7 +145,7 @@ Ext.onReady(function(){
 
 	  },
 	  iconCls: 'imprimir',
-	  tooltip:'Impresion de Ficha',
+	  tooltip:'Impresión de Ficha',
 	  scale: 'medium'
       });
 
@@ -185,6 +185,7 @@ Ext.onReady(function(){
   {name: 'nombres',type:'string',mapping:'fields.persona.fields.nombres'},
   {name: 'apellidos',type:'string',mapping:'fields.persona.fields.apellidos'},
   {name: 'rut',type:'string',mapping:'fields.persona.pk'},
+  {name: 'rut_verif',type:'string',mapping:'extras.getRutDeudor'},
   {name: 'rol',type:'string',mapping:'fields.rol'},
   {name: 'domicilio',type:'string',mapping:'fields.persona.fields.domicilio'},
   {name: 'telefono_fijo',type:'string',mapping:'fields.persona.fields.telefono_fijo'},
@@ -393,7 +394,7 @@ Ext.onReady(function(){
 
   {header: "Nombres", width: 40, dataIndex: 'nombres', sortable: true},
   {header: "Apellidos", width: 40, dataIndex: 'apellidos', sortable: true},
-  {header: "Rut", width: 25, dataIndex: 'rut', sortable: true},
+  {header: "Rut", width: 25, dataIndex: 'rut_verif', sortable: true},
   {header: "Deuda Inicial", width: 40, dataIndex: 'deuda_inicial', sortable: true},
 
   {header: "Tribunal", 
@@ -834,7 +835,7 @@ Ext.onReady(function(){
 	    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
 	    nuevo_deudor_btn,
 	    {% endifnotequal %} nuevo_registro_btn, reporte_btn,
-	    'Busqueda: ',' ',
+	    'Búsqueda: ',' ',
 	    search,
 	    '->',
 	    imprimir_btn,
@@ -1358,8 +1359,14 @@ Ext.onReady(function(){
 		width: 130
             },{
                 fieldLabel: 'Rut',
+		xtype: 'hidden',
                 name: 'rut',
-		readOnly:true,
+		readOnly:true,		
+		width: 130
+            },{
+                fieldLabel: 'Rut',
+                name: 'rut_verif',
+		readOnly:true,		
 		width: 130
             },{
 		 xtype: 'textarea',

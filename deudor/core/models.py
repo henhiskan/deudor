@@ -133,6 +133,15 @@ class Ficha(models.Model):
         if self.procurador:
             return self.procurador.short_name()
 
+    def getRutDeudor(self):
+        """ Devuelve el rut con digito verificador
+        del deudor 
+        """
+        if self.persona:
+            return self.persona.get_rut()
+        else:
+            return ''
+
 class FormaPago(models.Model):
     codigo = models.IntegerField()
     nombre = models.TextField(max_length=50)

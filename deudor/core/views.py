@@ -217,7 +217,7 @@ def getFicha(request):
          serializers.serialize('json', 
                                fichas[start:limit], 
                                indent=4, 
-                               extras=('getNombreCreador','getNombreProcurador',),
+                               extras=('getNombreCreador','getNombreProcurador','getRutDeudor',),
                                relations=({'procurador':{},'tribunal':{},'persona':{},'creado_por':{}})))
 
 
@@ -996,6 +996,11 @@ def printFicha(request):
     
 
 def imprimir(request):
+    """
+    Recibe el rut del deudor e imprime la ficha con 
+    sus eventos
+
+    """
     from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.platypus import *
     from reportlab.lib import colors
@@ -1014,7 +1019,7 @@ def imprimir(request):
     
     eventos = False
     if ficha.evento_set.count() > 0:
-        eventos = ficha.evento_set.all()
+        eventos = ficha.evento_set.all().order_by('fecha','fecha_creacion')
 
     response = HttpResponse(mimetype='application/pdf')
     response['Content-Disposition'] = 'attachment; filename=' + rut_deudor + '.pdf'
@@ -1105,10 +1110,10 @@ def imprimir(request):
 
 
     header = [['Nombre:',persona.nombres + " " + persona.apellidos, 'Rut:', persona.get_rut()]]
-    header.append(['Direccion:',persona.domicilio,'',''])
-    header.append(['Telefono:', persona.telefono_fijo, 'Celular:', persona.telefono_movil ])
+    header.append(['Dirección:',persona.domicilio,'',''])
+    header.append(['Teléfono:', persona.telefono_fijo, 'Celular:', persona.telefono_movil ])
     header.append(['Rol:', rol, 'Carpeta:', carpeta ])
-    header.append(['Tribunal:', tribunal,'Fecha Asignacion:', ficha.fecha_creacion.strftime('%d/%m/%Y')])
+    header.append(['Tribunal:', tribunal,'Fecha Asignación:', ficha.fecha_creacion.strftime('%d/%m/%Y')])
     header.append(['Deuda Inicial:', deuda_inicial,'Estado:',estado ])
     
     ts = [
@@ -1123,22 +1128,25 @@ def imprimir(request):
         ('SPAN', (1,1), (-1,1))]
 
 
-    head_table = Table(header, style=ts)
+    head_table = Table(header,[1.2*inch, 2.8*inch, 1.8*inch, 2.8*inch] )
+    head_table.setStyle(ts)
     elements.append(head_table)
     elements.append(Spacer(1, 0.2 * inch))        
-    data = [['Fecha','Codigo','Descripcion','Receptor']]
+    data = [['Fecha','Código','Descripción','Receptor']]
 
     for evento in eventos:
-        data.append([evento.fecha.strftime('%d/%m/%Y'),Paragraph(evento.codigo.descripcion, desc_style),Paragraph(evento.descripcion, desc_style), evento.receptor])
+        data.append([Paragraph(evento.fecha.strftime('%d/%m/%Y'), desc_style),Paragraph(evento.codigo.descripcion, desc_style),Paragraph(evento.descripcion, desc_style), evento.receptor])
 
 
     ts2 = [
         ('BACKGROUND',(0,0),(-1,0),colors.grey),
-        ('BOX',(0,0),(-1,-1),2,colors.grey),
+        #('BOX',(0,0),(-1,-1),2,colors.grey),
         ('VALIGN',(0,0),(-1,-1), 'TOP'),
-        ('ALIGN', (1,1), (-1,-1), 'LEFT'),
-        ('LINEABOVE', (0,1), (-1,1), 1, colors.grey),
-        ('FONT', (0,0), (-1,0), 'Helvetica-Bold')]
+        #('ALIGN', (1,1), (-1,-1), 'LEFT'),
+        #('LINEABOVE', (0,0), (0,-1), 1, colors.grey),
+        ('FONT', (0,1), (-1,-1), 'Helvetica'),
+        ('FONT', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1),[ '#f7f7f7','#f0f0f0',])]
 
     # The bottom row has one line above, and three lines below of
     # various colors and spacing.
@@ -1155,7 +1163,7 @@ def imprimir(request):
     elements.append(Spacer(1, 0.2 * inch))
     
     # Write the document to disk
-    doc.pagesize = landscape(A4)
+    doc.pagesize = landscape(LETTER)
     doc.build(elements) 
     response.write(buffer.getvalue())
     buffer.close()
