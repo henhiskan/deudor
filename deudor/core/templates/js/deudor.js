@@ -36,7 +36,7 @@ var reporte_win;
 var search;
 
 var ficha_ajax;
-
+var summary;
 
 
 {% load tags %}
@@ -47,6 +47,9 @@ Ext.onReady(function(){
   Ext.QuickTips.init();
   // turn on validation errors beside the field globally
   Ext.form.Field.prototype.msgTarget = 'side';
+
+
+ 
 
   var combo = new Ext.form.ComboBox({
         store: store,
@@ -91,7 +94,6 @@ Ext.onReady(function(){
 
 
 
-
   reporte_btn = new Ext.Action({
 	  text: 'Reportes',
 	  handler: function() {
@@ -114,10 +116,58 @@ Ext.onReady(function(){
 
 
 
+  imprimir_btn = new Ext.Action({
+	  text: 'Imprimir',
+	  handler: function(){
+
+	      if (!Ext.fly('frmDummyprint')) {
+                      var frm = document.createElement('form');
+                      frm.id = 'frmDummyprint';
+                      frm.name = id;
+                      frm.className = 'x-hidden';
+                      document.body.appendChild(frm);
+	      }
+	   
+
+	      Ext.Ajax.request({
+		      //url:'/deudor/printFicha?ficha_id=' + ficha_grid.getSelectionModel().getSelected().id,
+		      url:'/deudor/printFicha?rut_deudor=' + ficha_grid.getSelectionModel().getSelected().data.rut,
+		      method: 'GET',
+		      form: Ext.fly('frmDummyprint'),
+		      isUpload: true,
+		      success:function( result, request){
+			  Ext.MessageBox.alert("Enviado");
+		      },
+		      failure: function ( result, request) { 
+		          Ext.MessageBox.alert('Error', result.responseText); 
+		      }
+		  });
+
+	  },
+	  iconCls: 'imprimir',
+	  tooltip:'Impresión de Ficha',
+	  scale: 'medium'
+      });
+
 
 ///////////////////////////////////////////
 //////////// STORES          //////////////
 
+  // SortData Overload
+  Ext.override(Ext.data.Store, {
+    sortData : function(f, direction){
+        direction = direction || 'ASC';
+        var st = this.fields.get(f).sortType;
+        var fn = function(r1, r2){
+            var v1 = st(r1.data[f], r1), v2 = st(r2.data[f], r2);
+            return v1 > v2 ? 1 : (v1 < v2 ? -1 : 0);
+        };
+        this.data.sort(direction, fn);
+        if(this.snapshot && this.snapshot != this.data){
+            this.snapshot.sort(direction, fn);
+        }
+	  }
+  });
 
   ficha_store = new Ext.data.Store({
 	  proxy: new Ext.data.HttpProxy({
@@ -135,6 +185,7 @@ Ext.onReady(function(){
   {name: 'nombres',type:'string',mapping:'fields.persona.fields.nombres'},
   {name: 'apellidos',type:'string',mapping:'fields.persona.fields.apellidos'},
   {name: 'rut',type:'string',mapping:'fields.persona.pk'},
+  {name: 'rut_verif',type:'string',mapping:'extras.getRutDeudor'},
   {name: 'rol',type:'string',mapping:'fields.rol'},
   {name: 'domicilio',type:'string',mapping:'fields.persona.fields.domicilio'},
   {name: 'telefono_fijo',type:'string',mapping:'fields.persona.fields.telefono_fijo'},
@@ -145,34 +196,49 @@ Ext.onReady(function(){
   {name: 'tribunal', type:'string', mapping:'fields.tribunal', convert: function(v) {return v ? v.fields.nombre : null;}},
   {name: 'creado_por', type:'string', mapping:'extras.getNombreCreador' },
   {name: 'deuda_inicial',type:'int',mapping:'fields.deuda_inicial'},
-  {name: 'procurador',type:'string',mapping:'extras.getNombreProcurador' }
+  {name: 'procurador',type:'string',mapping:'extras.getNombreProcurador'},
+  {name: 'sistema_origen',type:'string',mapping:'fields.sistema_origen' }
 		  ])
       });
 
 
-  evento_store = new Ext.data.Store({
+  evento_store = new Ext.data.GroupingStore({
 	  
 	  proxy: new Ext.data.HttpProxy({
 		  url: '/deudor/getevento',
 		  method: 'GET'
 	      }),
-	    
+	  groupField: 'ficha',
+	  sortInfo: {field: 'fecha',direction: 'ASC'},
 	  reader: new Ext.data.JsonReader({
 		  root: 'results',
 		  totalProperty: 'total',
 		  id:'pk'
 		  
            }, [
-  {name: 'fecha', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.fecha'},
+  {name: 'fecha', 
+   type:'date',
+   dateFormat:'Y-m-d H:i:s',  
+   mapping: 'fields.fecha', 
+   sortType:  function(v, r){
+     fecha = r.get('fecha');
+     orden = r.get('orden');
+     return  (fecha!=''?fecha.dateFormat('YmdHi'):'') + orden;
+      }
+  },
+  {name: 'orden', type:'int',  mapping: 'fields.orden'},
   {name: 'prox_pago', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.proximo_pago'},
   {name: 'codigo',type:'string',mapping:'fields.codigo.fields.descripcion'},
   {name: 'descripcion',type:'string',mapping:'fields.descripcion'},
-  {name: 'pago',  type:'string',  mapping:'fields.forma_pago',convert: function(v) {return v ? v.fields.nombre : null;}},
+  {name: 'receptor',  type:'string',  mapping:'fields.receptor',convert: function(v) {return v ? v.fields.nombre : null;}},
+{name: 'pago',  type:'string',  mapping:'fields.forma_pago',convert: function(v) {return v ? v.fields.nombre : null;}},
   {name: 'capital', type:'int', mapping:'fields.capital'},
   {name: 'gasto', type:'int', mapping:'fields.gasto_judicial'},
   {name: 'honorario',type:'int',mapping:'fields.honorario'},
   {name: 'costas',type:'int',mapping:'fields.costas'},
-  {name: 'interes',type:'int',mapping:'fields.interes'}
+  {name: 'interes',type:'int',mapping:'fields.interes'},
+  {name: 'ficha',type:'int',mapping:'fields.ficha'}
+  
 	       ])
       });
 
@@ -292,6 +358,21 @@ Ext.onReady(function(){
       }); 
 
 
+  sist_orig_store = new Ext.data.Store({
+	  proxy: new Ext.data.HttpProxy({
+		  url: '/deudor/getsistorig',
+		  method: 'GET'
+	      }),
+	  reader: new Ext.data.JsonReader({
+		  root: 'results',
+		  totalProperty: 'total',
+		  id: 'pk'
+	      },[
+  {name: 'nombre', type: 'string', mapping:'fields.nombre'},
+  {name: 'id', type: 'int', mapping:'pk'}
+		 ])
+      }); 
+
 
     ///////////////////////////////////
     //           GRIDS
@@ -307,12 +388,12 @@ Ext.onReady(function(){
 
 
 	    columns: [
-  {header: "Fecha", width: 30, dataIndex: 'fecha', sortable: true, 
+  {header: "Fecha", width: 45, dataIndex: 'fecha', sortable: true, 
    renderer: Ext.util.Format.dateRenderer('d/m/Y')},
 
   {header: "Nombres", width: 40, dataIndex: 'nombres', sortable: true},
   {header: "Apellidos", width: 40, dataIndex: 'apellidos', sortable: true},
-  {header: "Rut", width: 25, dataIndex: 'rut', sortable: true},
+  {header: "Rut", width: 25, dataIndex: 'rut_verif', sortable: true},
   {header: "Deuda Inicial", width: 40, dataIndex: 'deuda_inicial', sortable: true},
 
   {header: "Tribunal", 
@@ -376,14 +457,11 @@ Ext.onReady(function(){
 		   failure: function ( result, request) { 
 		          Ext.MessageBox.alert('Error', result.responseText); 
 		            }
-			});
+				});
 
 			
 		     }
 		 });
-
-		
-	       
 	    }
 
 
@@ -394,6 +472,9 @@ Ext.onReady(function(){
 	    // nuevo registro
 	    registro_form.getForm().findField('rut_deudor').setValue(record.data.rut);
 	    Ext.getCmp("preview").getForm().loadRecord(record);
+
+	    // Activar el boton de imprimir
+	    imprimir_btn.enable();
 
 	});
     {% endifnotequal %}
@@ -423,22 +504,71 @@ Ext.onReady(function(){
 
 
     // Eventos deudor
-     grid = new Ext.grid.EditorGridPanel({
+
+    // define a custom summary function
+
+	// utilize custom extension for Group Summary
+    summary = new Ext.ux.grid.GroupSummary();
+
+
+    grid = new Ext.grid.EditorGridPanel({
 	     store: evento_store,
 	     height: '200',
 	     title: 'Registros',
 	     clicksToEdit: 1,
 
         columns: [
-    {header: "Fecha", width: 40, dataIndex: 'fecha', sortable: true,
-     renderer: Ext.util.Format.dateRenderer('d/m/Y')},
+    {header: "Fecha", 
+     width: 75,
+     dataIndex: 'fecha', 
+     sortable: true,
+     renderer: Ext.util.Format.dateRenderer('d/m/Y'),
+     editor: new Ext.form.DateField({
+	     format: 'd/m/Y'
+	 })
 
-    {header: "Proximo Pago", width: 40, dataIndex: 'prox_pago', sortable: true, 
-     renderer: Ext.util.Format.dateRenderer('d/m/Y')},
+    },{
+	header: 'Ficha',
+	width: 20,
+	sortable: true,
+	dataIndex: 'ficha',
+	renderer: function(v, params, record){
+	    rut = registro_form.getForm().findField('rut_deudor').value;
+	    return "Registros de Persona Rut:" + rut;
+	},
+    },
 
-    {header: "Codigo", width: 60, dataIndex: 'codigo', sortable: true
+    {
+     header: "#", 
+     width: 20, 
+     dataIndex: 'orden', 
+     sortable: true,
+     editor: new Ext.form.NumberField({
+	     allowBlank: true,
+	     allowNegative: false,
+	     allowDecimals: false
+	 })
+    }
+
+    ,
+
+    {header: "Proximo Pago", 
+     width: 40,
+     dataIndex: 'prox_pago',
+     sortable: true, 
+     renderer: Ext.util.Format.dateRenderer('d/m/Y')
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-     , editor: new Ext.form.ComboBox({
+     ,editor: new Ext.form.DateField({
+	     format: 'd/m/Y'
+	 })
+   {% endifnotequal %}
+     },
+
+    {header: "Codigo", 
+     width: 60,
+     dataIndex: 'codigo', 
+     sortable: true,
+     editor: new Ext.form.ComboBox({
                     typeAhead: true,
                     triggerAction: 'all',
                     lazyRender: true,
@@ -446,17 +576,32 @@ Ext.onReady(function(){
 		    displayField: 'descripcion',
 		    valueField: 'codigo'
 	 })
-	 {% endifnotequal %}
     },
-    {header: "Descripción", width: 70, dataIndex: 'descripcion', sortable: true
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-     ,editor: new Ext.form.TextField({
+    {header: "Descripción",
+     width: 90,
+     dataIndex: 'descripcion', 
+     sortable: true,
+     editor: new Ext.form.TextField({
 	     allowBlank: true}
 	 )
-   {% endifnotequal %}
     },
-    {header: "Forma Pago", width: 40, 
+    {header: "Receptor",
+     dataIndex: 'receptor', 
+     sortable: true,
+     width: 50,
+     editor: new Ext.form.ComboBox({
+	            typeAhead: true,
+                    triggerAction: 'all',
+                    lazyRender: true,
+		    store: receptor_store,
+		    displayField: 'nombre',
+		    valueField: 'id'
+	 })
+    },
+
+    {header: "Forma Pago", width: 70, 
      dataIndex: 'pago', sortable: true
+     
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
      ,editor: new Ext.form.ComboBox({
                     typeAhead: true,
@@ -470,47 +615,100 @@ Ext.onReady(function(){
    {% endifnotequal %}
     },
 
-    {header: "Capital", width: 40, dataIndex: 'capital', sortable: true
+    {header: "Capital", width: 40, 
+     dataIndex: 'capital', 
+     sortable: true,
+     summaryType: 'sum',
+     summaryRenderer: function(v, params, data){
+	    return '$' + v ;
+	}
+
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
    , editor: new Ext.form.NumberField({
 	     allowBlank: true,
-	     allowNegative: false
+	     allowNegative: false,
+	     allowDecimals: false
        })
    {% endifnotequal %}
     },
-    {header: "Honorario", width: 40, dataIndex: 'honorario', sortable: true
+    {header: "Honorario", width: 40, 
+     dataIndex: 'honorario', 
+     sortable: true,
+     summaryType: 'sum',
+     summaryRenderer: function(v, params, data){
+	    return '$' + v ;
+	}
+
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
    , editor: new Ext.form.NumberField({
 	     allowBlank: true,
-	     allowNegative: false
+	     allowNegative: false,
+	     allowDecimals: false
        })
 
    {% endifnotequal %}
     },
-    {header: "Gasto Jud", width: 40, dataIndex: 'gasto', sortable: true
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-     ,editor: new Ext.form.NumberField({
-	     allowBlank: true,
-	     allowNegative: false
-	 })
-   {% endifnotequal %}
-    },
+
     
-    {header: "Costas", width: 40, dataIndex: 'costas', sortable: true
+    {header: "Costas", width: 40,
+     dataIndex: 'costas', 
+     sortable: true,
+     summaryType: 'sum',
+     summaryRenderer: function(v, params, data){
+	    return '$' + v ;
+	}
+
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
      ,editor: new Ext.form.NumberField({
 	     allowBlank: true,
-	     allowNegative: false
+	     allowNegative: false,
+	     allowDecimals: false
 	 })
    {% endifnotequal %}
     },
-    {header: "Interes", width: 40, dataIndex: 'interes', sortable: true   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+    {header: "Interes", width: 40,
+     dataIndex: 'interes', 
+     sortable: true ,
+     summaryType: 'sum',
+     summaryRenderer: function(v, params, data){
+	    return '$' + v ;
+	}
+  {% ifnotequal  usuario|getTipoUsuario "procurador" %}
      ,editor: new Ext.form.NumberField({
 	     allowBlank: true,
-	     allowNegative: false
+	     allowNegative: false,
+	     allowDecimals: false
 	 })
    {% endifnotequal %}
+    },
+    {header: "Total", width: 40, 
+     dataIndex: 'total', 
+     summaryType: 'sum',
+     renderer: function(v, params, record){
+	    return '$ ' + ( (record.data.capital==''?0:parseInt(record.data.capital)) +
+			    (record.data.honorario==''?0:parseInt(record.data.honorario)) +
+			    (record.data.costas==''?0:parseInt(record.data.costas)) +
+			    (record.data.interes==''?0:parseInt(record.data.interes)));
+	},
+
+     sortable: true }
+
+    ,{header: "Gasto Jud", width: 40, 
+     id: 'gasto',
+     dataIndex: 'gasto', 
+     sortable: true,
+     summaryType: 'sum',
+     summaryRenderer: function(v, params, data){
+	    return '$' + v ;
+	}
+
+     ,editor: new Ext.form.NumberField({
+	     allowBlank: true,
+	     allowNegative: false,
+	     allowDecimals: false
+	 })
     }
+
 
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
    ,{width: 40, dataIndex: 0, id: 'deleter', sortable: false, fixed: true,
@@ -519,12 +717,23 @@ Ext.onReady(function(){
        }}
     {% endifnotequal %}
         ],
-		sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
-		viewConfig: {
-			forceFit: true
+    sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
+	     viewConfig: {
+		 forceFit: true
 	     },
-	      region: 'center'
-	});
+    region: 'center',
+
+   view: new Ext.grid.GroupingView({
+	      forceFit: true,
+	      showGroupName: false,
+	      enableNoGroups: false,
+	      enableGroupingMenu: false,
+	      hideGroupedColumn: true
+	      }),
+
+   plugins: summary,
+	     
+	 });
 
 
      {% ifnotequal  usuario|getTipoUsuario "procurador" %}
@@ -556,7 +765,7 @@ Ext.onReady(function(){
 		     }
 		 });
 
-	     }
+	 }
 	 });
 
      {% endifnotequal %}
@@ -584,9 +793,6 @@ Ext.onReady(function(){
 		});
 	    
 	 });
-
-
-
 
 
      reporte_grid = new Ext.grid.GridPanel({
@@ -641,8 +847,10 @@ Ext.onReady(function(){
 	    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
 	    nuevo_deudor_btn,
 	    {% endifnotequal %} nuevo_registro_btn, reporte_btn,
-	    'Busqueda: ',' ',
-	    search, '->',
+	    'Búsqueda: ',' ',
+	    search,
+	    '->',
+	    imprimir_btn,
 	    {
                 text:'Salir',
                 handler:function(){
@@ -719,14 +927,16 @@ Ext.onReady(function(){
 			format: 'd/m/Y',
 			value: (new Date()).format('d/m/Y')
 			    }),
-
+    
+                       {% ifnotequal  usuario|getTipoUsuario "procurador" %}
 			new Ext.form.DateField({
 				fieldLabel: 'Fecha Proximo Pago',
 				name: 'proximo_pago',
 				format: 'd/m/Y'
 				//value: (new Date()).format('d/m/Y')
 			    }),
-			
+                        {% endifnotequal %}
+
 			new Ext.form.ComboBox({
 				hiddenName: 'codigo',
 				id:'combo',
@@ -746,9 +956,12 @@ Ext.onReady(function(){
 
 			    })
 			]
-            },{
+            },
+             {% ifnotequal  usuario|getTipoUsuario "procurador" %}
+               {
                 layout: 'form',
                 items: [
+               
 			new Ext.form.ComboBox({
 				hiddenName: 'formapago_codigo',
 				id:'formapago',
@@ -777,7 +990,9 @@ Ext.onReady(function(){
                     name: 'interes'
 
                 }]
-	   },{
+	       },
+               {% endifnotequal %}
+		{
                 layout: 'form',
                 items: [{
                     xtype:'numberfield',
@@ -785,7 +1000,9 @@ Ext.onReady(function(){
 		    allowBlank: true,
                     name: 'gasto_judicial'
 
-                },{
+                }
+            {% ifnotequal  usuario|getTipoUsuario "procurador" %}    
+		,{
                     xtype:'numberfield',
                     fieldLabel: 'Honorario',
 		    allowBlank: true,
@@ -797,7 +1014,9 @@ Ext.onReady(function(){
 		    allowBlank: true,
                     name: 'costas'
 
-		 },
+		 }
+             {% endifnotequal %}
+		,
 
 		    new Ext.form.ComboBox({
 				hiddenName: 'receptor',
@@ -951,7 +1170,22 @@ Ext.onReady(function(){
 			     allowBlank:false,
 			     format: 'd/m/Y',
 			     value: (new Date()).format('d/m/Y')
-			 })]
+			 }),
+		     new Ext.form.ComboBox({
+			     hiddenName: 'sistema_origen',
+			     id:'sistorigen',
+			     store: sist_orig_store,
+			     fieldLabel: 'Sistema Origen',
+			     displayField: 'nombre',
+			     valueField: 'id',
+			     emptyText: 'Sistema origen',
+			     mode:'local',
+			     minChars: 0,
+			     name: 'sistema_origen',
+			     allowBlank: true,
+			     triggerAction: 'all'
+			 })
+		     ]
 
 		 },{
 	      layout:'form',
@@ -1148,8 +1382,14 @@ Ext.onReady(function(){
 		width: 130
             },{
                 fieldLabel: 'Rut',
+		xtype: 'hidden',
                 name: 'rut',
-		readOnly:true,
+		readOnly:true,		
+		width: 130
+            },{
+                fieldLabel: 'Rut',
+                name: 'rut_verif',
+		readOnly:true,		
 		width: 130
             },{
 		 xtype: 'textarea',
@@ -1211,6 +1451,23 @@ Ext.onReady(function(){
 			     allowBlank: true,
 			     triggerAction: 'all'
 			 }),
+
+	     new Ext.form.ComboBox({
+			     hiddenName: 'sistema_origen',
+			     id:'sistema_origen_update',
+			     store: sist_orig_store,
+			     width: 150,
+			     fieldLabel: 'Sist. Origen',
+			     displayField: 'nombre',
+			     valueField: 'id',
+			     emptyText: 'Sist. Origen',
+			     mode:'local',
+			     minChars: 0,
+			     name: 'sist_orig_update',
+			     allowBlank: true,
+			     triggerAction: 'all'
+			 }),
+
 	   {
 		fieldLabel: 'Deuda Inicial',
                 name: 'deuda_inicial',
@@ -1282,10 +1539,10 @@ Ext.onReady(function(){
 
 	// sm, rowIdx, r
 	ficha_grid.on('rowdblclick', function(grid_selected, rowIdx, e) {
-
+		
 		record= grid_selected.getStore().getAt(rowIdx);
 		grid.enable();
-
+		imprimir_btn.enable();
 		nuevo_registro_btn.enable();
 		evento_store.baseParams = {rut: record.data.rut};
 		evento_store.load();
@@ -1335,6 +1592,8 @@ Ext.onReady(function(){
 	
   grid.disable();
   nuevo_registro_btn.disable();
+  imprimir_btn.disable();
+
   ficha_store.load();
   codigo_store.load();
   formapago_store.load();
@@ -1342,4 +1601,5 @@ Ext.onReady(function(){
   receptor_store.load();
   tribunal_store.load();
   usuario_store.load();
+  sist_orig_store.load();
 });

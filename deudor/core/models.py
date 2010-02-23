@@ -64,7 +64,7 @@ class Usuario(models.Model):
         return self.user.get_full_name()
 
 class Codigo(models.Model):
-    codigo_id = models.TextField(max_length=60,primary_key=True)
+    codigo_id = models.IntegerField(primary_key=True)
     descripcion = models.TextField(max_length=200)
     
     def __unicode__(self):
@@ -88,6 +88,15 @@ class Tribunal(models.Model):
     class Meta:
         verbose_name_plural = 'tribunales'
 
+class SistemaOrigen(models.Model):
+    nombre = models.TextField(max_length=100)
+    
+    def __unicode__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name_plural = "Sistemas de Origen"
+
 ESTADOS = (
     ('0','activo'),
     ('1','cerrado'),
@@ -107,6 +116,7 @@ class Ficha(models.Model):
     procurador = models.ForeignKey(Usuario, blank=True, null=True)
 
     estado = models.CharField(max_length=1,choices=ESTADOS, default='0')
+    sistema_origen = models.ForeignKey(SistemaOrigen, blank=True, null=True)
 
     def __unicode__(self):
         if self.rol:
@@ -123,6 +133,15 @@ class Ficha(models.Model):
         if self.procurador:
             return self.procurador.short_name()
 
+    def getRutDeudor(self):
+        """ Devuelve el rut con digito verificador
+        del deudor 
+        """
+        if self.persona:
+            return self.persona.get_rut()
+        else:
+            return ''
+
 class FormaPago(models.Model):
     codigo = models.IntegerField()
     nombre = models.TextField(max_length=50)
@@ -137,10 +156,13 @@ class Receptor(models.Model):
     def __unicode__(self):
         return self.nombre
 
+    class Meta:
+        verbose_name_plural = "Receptores"
 
 class Evento(models.Model):
     ficha = models.ForeignKey(Ficha)
     fecha = models.DateTimeField()
+    orden = models.IntegerField(blank=True, null=True)
     proximo_pago = models.DateTimeField(blank=True, null=True)
 
     codigo = models.ForeignKey(Codigo)
