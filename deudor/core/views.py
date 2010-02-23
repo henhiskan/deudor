@@ -1137,8 +1137,9 @@ def imprimir(request):
     elements.append(Spacer(1, 0.2 * inch))        
     data = [['Fecha','Código','Descripción','Receptor']]
 
-    for evento in eventos:
-        data.append([Paragraph(evento.fecha.strftime('%d/%m/%Y'), desc_style),Paragraph(evento.codigo.descripcion, desc_style),Paragraph(evento.descripcion, desc_style), evento.receptor])
+    if eventos:
+        for evento in eventos:
+            data.append([Paragraph(evento.fecha.strftime('%d/%m/%Y'), desc_style),Paragraph(evento.codigo.descripcion, desc_style),Paragraph(evento.descripcion, desc_style), evento.receptor])
 
 
     ts2 = [
