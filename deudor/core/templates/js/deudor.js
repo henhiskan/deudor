@@ -196,7 +196,8 @@ Ext.onReady(function(){
   {name: 'tribunal', type:'string', mapping:'fields.tribunal', convert: function(v) {return v ? v.fields.nombre : null;}},
   {name: 'creado_por', type:'string', mapping:'extras.getNombreCreador' },
   {name: 'deuda_inicial',type:'int',mapping:'fields.deuda_inicial'},
-  {name: 'procurador',type:'string',mapping:'extras.getNombreProcurador'},
+  {name: 'procurador_name',type:'string',mapping:'extras.getNombreProcurador'},
+  {name: 'procurador',type:'string',mapping:'extras.getIdProcurador'},
   {name: 'sistema_origen',type:'string',mapping:'fields.sistema_origen' }
 		  ])
       });
@@ -403,8 +404,8 @@ Ext.onReady(function(){
     },
   {header: "Rol", width: 30, dataIndex: 'rol', sortable: true}, 
   {header: "Carpeta", width: 40, dataIndex: 'carpeta', sortable: true},
-  {header: "Procurador", width: 40, dataIndex: 'procurador', sortable: true}
-
+  {header: "Procurador", width: 40, dataIndex: 'procurador_name', sortable: true},
+  {header: "ProcuradorId", width: 40, dataIndex: 'procurador', hidden:true}
    {% ifnotequal  usuario|getTipoUsuario "procurador" %}
     ,{width: 40, dataIndex: 0, id: 'deleter', sortable: false, fixed: true,
      renderer: function(v, p, record, rowIndex){
@@ -581,7 +582,7 @@ Ext.onReady(function(){
      width: 90,
      dataIndex: 'descripcion', 
      sortable: true,
-     editor: new Ext.form.TextField({
+     editor: new Ext.form.TextArea({
 	     allowBlank: true}
 	 )
     },

@@ -194,7 +194,7 @@ def getFicha(request):
         sort = 'persona__apellidos'
     if sort == 'rut':
         sort = 'persona__rut'
-    if sort == 'procurador':
+    if sort == 'procurador_name':
         sort = 'procurador__user__first_name'
     
     if dir == 'DESC':
@@ -217,7 +217,7 @@ def getFicha(request):
          serializers.serialize('json', 
                                fichas[start:limit], 
                                indent=4, 
-                               extras=('getNombreCreador','getNombreProcurador','getRutDeudor',),
+                               extras=('getNombreCreador','getNombreProcurador','getRutDeudor','getIdProcurador',),
                                relations=({'procurador':{},'tribunal':{},'persona':{},'creado_por':{}})))
 
 
