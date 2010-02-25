@@ -128,10 +128,20 @@ class Ficha(models.Model):
     def getNombreCreador(self):
         if self.creado_por:
             return self.creado_por.short_name()
+        else:
+            return ''
 
     def getNombreProcurador(self):
         if self.procurador:
             return self.procurador.short_name()
+        else:
+            return ''
+
+    def getIdProcurador(self):
+        if self.procurador:
+            return self.procurador.id
+        else:
+            return ''
 
     def getRutDeudor(self):
         """ Devuelve el rut con digito verificador
