@@ -729,10 +729,18 @@ def getReporte(request):
 
         ws0 = wb.add_sheet('Reporte')
         
-        row_id = 0
+        #Imprimir el header del SQL
+        cell_id = 0
+        for desc in cur.cursor.description:
+            ws0.write(0,cell_id,"%s" % desc[0], font_style)
+            cell_id += 1
+            
+        row_id = 1
         for row in rows:
             cell_id = 0
             for cell in row:
+                if cell == None:
+                    cell = ''
                 ws0.write(row_id,cell_id,"%s" % cell,font_style)
                 cell_id += 1
             row_id += 1
