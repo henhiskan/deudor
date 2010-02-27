@@ -130,7 +130,6 @@ Ext.onReady(function(){
 	   
 
 	      Ext.Ajax.request({
-		      //url:'/deudor/printFicha?ficha_id=' + ficha_grid.getSelectionModel().getSelected().id,
 		      url:'/deudor/printFicha?rut_deudor=' + ficha_grid.getSelectionModel().getSelected().data.rut,
 		      method: 'GET',
 		      form: Ext.fly('frmDummyprint'),
@@ -144,9 +143,9 @@ Ext.onReady(function(){
 		  });
 
 	  },
-	  iconCls: 'imprimir',
+	  //iconCls: 'imprimir',
 	  tooltip:'Impresión de Ficha',
-	  scale: 'medium'
+	  //scale: 'medium'
       });
 
 
@@ -849,7 +848,7 @@ Ext.onReady(function(){
 	    nuevo_deudor_btn,
 	    {% endifnotequal %} nuevo_registro_btn, reporte_btn,
 	    'Búsqueda: ',' ',
-	    search,
+	    search, '  ',
 	    '->',
 	    imprimir_btn,
 	    {
@@ -1372,7 +1371,8 @@ Ext.onReady(function(){
 	     {
                 xtype: 'datefield',
                 fieldLabel: 'Fecha asign',
-                name: 'fecha'
+                name: 'fecha',
+		width: 130
 	     },{
                 fieldLabel: 'Nombres',
                 name: 'nombres',
@@ -1516,20 +1516,20 @@ Ext.onReady(function(){
 	});
 
 
-	var ct = new Ext.Panel({
-		renderTo: 'areadata',
-		frame: true,
-		title: 'Sistema de Deuda',
-		width: 800,
-		height: 600,
-		layout: 'border',
-		tbar: tb,
-		split: true,
-		items: [
-			tabs, preview
-			
-		]
-	    });
+    var ct = new Ext.Panel({
+	    renderTo: 'areadata',
+	    frame: true,
+	    title: 'Sistema de Deuda',
+	    
+	    height: 600,
+	    layout: 'border',
+	    tbar: tb,
+	    split: true,
+	    items: [
+		    tabs, preview
+		    
+		    ]
+	});
 	
 
 	//ficha_grid.on('rowclick', function(sm, row, rec) {
