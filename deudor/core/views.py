@@ -728,7 +728,7 @@ def getReporte(request):
         font_style.font = font
 
         num_style = pyExcelerator.XFStyle()
-        font_style.font = font
+        num_style.font = font
         num_style.num_format_str = '0'
 
 
