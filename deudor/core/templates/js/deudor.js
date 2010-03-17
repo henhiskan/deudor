@@ -710,13 +710,10 @@ Ext.onReady(function(){
 	 })
     }
 
-
-   {% ifnotequal  usuario|getTipoUsuario "procurador" %}
    ,{width: 40, dataIndex: 0, id: 'deleter', sortable: false, fixed: true,
      renderer: function(v, p, record, rowIndex){
         return '<div class="deleter" style="width: 15px; height: 16px;"></div>';
        }}
-    {% endifnotequal %}
         ],
     sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
 	     viewConfig: {
@@ -737,7 +734,6 @@ Ext.onReady(function(){
 	 });
 
 
-     {% ifnotequal  usuario|getTipoUsuario "procurador" %}
      grid.on('cellclick', function(grid, rowIndex, columnIndex, e){
 
 
@@ -768,8 +764,6 @@ Ext.onReady(function(){
 
 	 }
 	 });
-
-     {% endifnotequal %}
      
      grid.on('afterEdit', function(e) {
 	     
@@ -938,87 +932,7 @@ Ext.onReady(function(){
 			    }),
                         {% endifnotequal %}
 
-			new Ext.form.ComboBox({
-				hiddenName: 'codigo',
-				id:'combo',
-				store: codigo_store,
-				allowBlank: false,
-				anyMatch: true,
-				typeAhead: false,
-				fieldLabel: 'Codigo',
-				displayField: 'descripcion',
-				valueField: 'codigo',
-				emptyText:'Seleccione un codigo',
-				mode: 'local',
-				minChars: 0,
-				name: 'codigo',
-				triggerAction:'all',
-				lazyRender:true
-
-			    })
-			]
-            },
-             {% ifnotequal  usuario|getTipoUsuario "procurador" %}
-               {
-                layout: 'form',
-                items: [
-               
-			new Ext.form.ComboBox({
-				hiddenName: 'formapago_codigo',
-				id:'formapago',
-				allowBlank: true,
-				store: formapago_store,
-				fieldLabel: 'Forma pago',
-				displayField: 'nombre',
-				valueField: 'codigo',
-				emptyText:'Seleccione una forma de pago',
-				mode: 'local',
-				minChars: 0,
-				name: 'forma_pago',
-				triggerAction:'all'
-			    }),
 			
-                {
-                    xtype:'numberfield',
-			fieldLabel: 'Capital',
-			allowBlank: true,
-			name: 'capital'
-
-                },{
-                    xtype:'numberfield',
-                    fieldLabel: 'Interes',
-		    allowBlank: true,
-                    name: 'interes'
-
-                }]
-	       },
-               {% endifnotequal %}
-		{
-                layout: 'form',
-                items: [{
-                    xtype:'numberfield',
-                    fieldLabel: 'Gasto Judicial',
-		    allowBlank: true,
-                    name: 'gasto_judicial'
-
-                }
-            {% ifnotequal  usuario|getTipoUsuario "procurador" %}    
-		,{
-                    xtype:'numberfield',
-                    fieldLabel: 'Honorario',
-		    allowBlank: true,
-                    name: 'honorario'
-
-                },{
-                    xtype:'numberfield',
-                    fieldLabel: 'Costas',
-		    allowBlank: true,
-                    name: 'costas'
-
-		 }
-             {% endifnotequal %}
-		,
-
 		    new Ext.form.ComboBox({
 				hiddenName: 'receptor',
 				id:'receptor_id',
@@ -1034,22 +948,112 @@ Ext.onReady(function(){
 				triggerAction:'all'
 			})
 
+			]
+            },
+
+    {
+	layout: 'form',
+	items: [
+    {% ifnotequal  usuario|getTipoUsuario "procurador" %}		
+		new Ext.form.ComboBox({
+			hiddenName: 'formapago_codigo',
+			id:'formapago',
+			allowBlank: true,
+			store: formapago_store,
+			fieldLabel: 'Forma pago',
+			displayField: 'nombre',
+			valueField: 'codigo',
+			emptyText:'Selec. forma pago',
+			mode: 'local',
+			minChars: 0,
+			name: 'forma_pago',
+			triggerAction:'all'
+		    }),
+		
+    {
+	           xtype:'numberfield',
+	    fieldLabel: 'Capital',
+	    allowBlank: true,
+	    name: 'capital'
+	    
+	    } ,
+    {% endifnotequal %}
+			
+		
+    {
+	xtype:'numberfield',
+	fieldLabel: 'Gasto Judicial',
+	allowBlank: true,
+	name: 'gasto_judicial'
+	
+    }
+		
+		]
+	       },
+
+		{
+                layout: 'form',
+                items: [
+    {% ifnotequal  usuario|getTipoUsuario "procurador" %}    
+
+    {
+                    xtype:'numberfield',
+                    fieldLabel: 'Interes',
+		    allowBlank: true,
+                    name: 'interes'
+
+                }
+    ,{
+                    xtype:'numberfield',
+                    fieldLabel: 'Honorario',
+		    allowBlank: true,
+                    name: 'honorario'
+
+                },{
+                    xtype:'numberfield',
+                    fieldLabel: 'Costas',
+		    allowBlank: true,
+                    name: 'costas'
+
+		 }
+             {% endifnotequal %}
+		
 
 		    ]
             }]
 	     },
+	    new Ext.form.ComboBox({
+				hiddenName: 'codigo',
+				id:'combo',
+				width: 350,
+				store: codigo_store,
+				allowBlank: false,
+				anyMatch: true,
+				typeAhead: false,
+				fieldLabel: 'Codigo',
+				displayField: 'descripcion',
+				valueField: 'codigo',
+				emptyText:'Seleccione un codigo',
+				mode: 'local',
+				minChars: 0,
+				name: 'codigo',
+				triggerAction:'all',
+				lazyRender:true
+
+			    }),
+
 		     new Ext.form.TextArea({
 			     fieldLabel: 'Descripción',
 			     name: 'descripcion',
 			     grow: true,
-			     width: 210,
+			     width: 350,
 			     allowBlank: true,
 			     preventScrollbars: true
 			 })
 	    ,{
 			 xtype: 'hidden',
 			     name: 'rut_deudor'
-		     }
+			     }
 	    ],
         buttons: [{
 		    text: 'Guardar',
@@ -1060,7 +1064,7 @@ Ext.onReady(function(){
 				    method:'POST',
 				    url:'putevento',
 				    success: function(){
-					Ext.MessageBox.alert('Exitoso', 'Evento guardado');
+					//Ext.MessageBox.alert('Exitoso', 'Evento guardado');
 					rut_deudor = registro_form.getForm().findField('rut_deudor').value
 					registro_form.getForm().reset();
 					registro_form.getForm().findField('rut_deudor').setValue(rut_deudor);
@@ -1075,7 +1079,7 @@ Ext.onReady(function(){
 				})
 			       }
 			else{
-			    Ext.MessageBox.alert('Errores', 'Por favor, corriga los errores.');
+			    Ext.MessageBox.alert('Errores', 'Por favor, corrija los errores.');
 			}
 		    }
 			

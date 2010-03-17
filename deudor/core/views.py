@@ -723,16 +723,22 @@ def getReporte(request):
         
         wb = pyExcelerator.Workbook()
         font = pyExcelerator.Font()
-        font.bold = True
+        font.bold = False
         font_style = pyExcelerator.XFStyle()
         font_style.font = font
+
+        #header in bold 
+        header_style = pyExcelerator.XFStyle()
+        header_style.font.name = 'Arial'
+        header_style.font.bold = True
 
         ws0 = wb.add_sheet('Reporte')
         
         #Imprimir el header del SQL
         cell_id = 0
         for desc in cur.cursor.description:
-            ws0.write(0,cell_id,"%s" % desc[0], font_style)
+            ws0.write(0,cell_id,"%s" % desc[0], header_style)
+            ws0.col(cell_id).width = 0x0d00+cell_id
             cell_id += 1
             
         row_id = 1
@@ -758,7 +764,7 @@ def getReporte(request):
         data = '({ total: %d, "results": %s })' % \
             (Reporte.objects.count(),
              serializers.serialize('json', 
-                                   Reporte.objects.all(), 
+                                   Reporte.objects.order_by('nombre'), 
                                    indent=4))
 
         return HttpResponse(data, content_type='application/json')
