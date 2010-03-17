@@ -7,7 +7,7 @@ import time
 import re
 import signal
 
-sys.path.append('/home/rrossel/Projects/deudor/deudor/')
+sys.path.append('/home/sistema/aplicacion/deudor/')
 os.environ['DJANGO_SETTINGS_MODULE']='settings'
 signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 

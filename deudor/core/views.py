@@ -1101,9 +1101,13 @@ def imprimir(request):
     if ficha.deuda_inicial:
         deuda_inicial = ficha.deuda_inicial 
 
-    estado = "Sin informacion"
+    estado = "Sin información"
     if ficha.estado :
         estado= ficha.get_estado_display()
+
+    sistema_origen = "Sin información"
+    if ficha.sistema_origen:
+        sistema_origen = ficha.sistema_origen
 
     ##elements.append(Paragraph("Procurador: "+ procurador, style))
     ##elements.append(Spacer(1, 0.2 * inch))
@@ -1126,7 +1130,7 @@ def imprimir(request):
     header.append(['Rol:', rol, 'Carpeta:', carpeta ])
     header.append(['Tribunal:', tribunal,'Fecha Asignación:', ficha.fecha_creacion.strftime('%d/%m/%Y')])
     header.append(['Deuda Inicial:', deuda_inicial,'Estado:',estado ])
-    
+    header.append(['Sistema origen:',sistema_origen,'',''])
     ts = [
         ('BOX',(0,0),(-1,-1),1,colors.grey),
         ('ALIGN', (1,1), (-1,-1), 'LEFT'),

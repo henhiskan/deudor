@@ -6,7 +6,7 @@ import datetime
 import time
 import re
 
-sys.path.append('/home/rrossel/Projects/jjdonoso/deudor')
+sys.path.append('/home/sistema/aplicacion/deudor')
 os.environ['DJANGO_SETTINGS_MODULE']='settings'
 
 from core.models import *

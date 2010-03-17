@@ -144,7 +144,7 @@ Ext.onReady(function(){
 		  });
 
 	  },
-	  iconCls: 'imprimir',
+	  //iconCls: 'imprimir',
 	  tooltip:'Impresión de Ficha',
 	  scale: 'medium'
       });
@@ -1520,7 +1520,7 @@ Ext.onReady(function(){
 		renderTo: 'areadata',
 		frame: true,
 		title: 'Sistema de Deuda',
-		width: 800,
+		//width: 800,
 		height: 600,
 		layout: 'border',
 		tbar: tb,
