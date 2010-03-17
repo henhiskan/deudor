@@ -727,6 +727,11 @@ def getReporte(request):
         font_style = pyExcelerator.XFStyle()
         font_style.font = font
 
+        num_style = pyExcelerator.XFStyle()
+        font_style.font = font
+        num_style.num_format_str = '0'
+
+
         #header in bold 
         header_style = pyExcelerator.XFStyle()
         header_style.font.name = 'Arial'
@@ -747,7 +752,10 @@ def getReporte(request):
             for cell in row:
                 if cell == None:
                     cell = ''
-                ws0.write(row_id,cell_id,"%s" % cell,font_style)
+                try:
+                    ws0.write(row_id,cell_id,int(cell),num_style)
+                except:
+                    ws0.write(row_id,cell_id,"%s" % cell,font_style)
                 cell_id += 1
             row_id += 1
         
