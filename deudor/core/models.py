@@ -3,6 +3,8 @@ from django.db import models
 from django.contrib import admin
 from django.contrib.auth.models import User
 
+from balance import Balance
+
 PERFIL_USUARIO = (
     ('0','administrador'),
     ('1','cobranza'),
@@ -192,6 +194,9 @@ class Evento(models.Model):
     def __unicode__(self):
         return self.descripcion
 
+    def save(self, *args, **kwargs):
+        self.interes = 1999
+        super(Evento, self).save(*args, **kwargs)
 
 class Cambio(models.Model):
 

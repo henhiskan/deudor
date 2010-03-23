@@ -24,6 +24,9 @@ from reportlab.lib.units import inch
 from reportlab.platypus import Spacer, SimpleDocTemplate, Table, TableStyle
 from cStringIO import StringIO
 
+#logica de balance de jjdonoso
+#from balance import Balance
+
 
 login_needed = user_passes_test(lambda u: not u.is_anonymous(), login_url='/deudor/login/')
 procurador_needed = user_passes_test(lambda u: not u.is_anonymous() and u.usuario_set.get() and u.usuario_set.get().get_perfil_display() == 'procurador', login_url='/deudor/login/')
@@ -494,11 +497,16 @@ class EventoForm(forms.ModelForm):
         model = Evento
         exclude = ('ficha','codigo','forma_pago')
 
+
 def putEvento(request):
     """ Ingreso de un nuevo evento para una ficha """
-
+    
+    #bal = Balance(100000,20000,21000)
+    #bal.calcula_honorario(True)
+    
     if request.method == "POST":
         
+            
         rut_deudor = request.POST.get('rut_deudor',False)
         codigo_id = request.POST.get('codigo',False)
 
@@ -508,11 +516,22 @@ def putEvento(request):
 
         if event_form.is_valid() and rut_deudor:
 
+
+
+
             ficha = Ficha.objects.get(persona__rut = rut_deudor)
 
             codigo  = Codigo.objects.get(codigo_id = codigo_id)
 
             event = event_form.save(commit=False)
+            
+            #abono = request.POST.get('abono',False)
+
+            #if (int(abono) > 0):
+            #   bal.abonar(abono)
+            event.interes = '2311'
+            event.costas = '1234'
+
             event.ficha = ficha
             event.codigo = codigo
             

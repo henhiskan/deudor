@@ -1033,8 +1033,14 @@ Ext.onReady(function(){
 				    name: 'honorario'
 				   
 				   }
+			   ,{
+			       xtype:'numberfield',
+				   fieldLabel: 'Costas',
+				   allowBlank: true,
+				   name: 'costas'
+				   
+				   }
 			   //{%endcomment%}
-
 
 			   ,{
 				   layout:'column',			       
@@ -1059,18 +1065,11 @@ Ext.onReady(function(){
 						   })
 				       
 				       ]
-				   },
+				   }
 
-			   {
-			       xtype:'numberfield',
-				   fieldLabel: 'Costas',
-				   allowBlank: true,
-				   name: 'costas'
-				   
-				   },
 			   //{% endifnotequal %}
 
-			   new Ext.form.ComboBox({
+			   ,   new Ext.form.ComboBox({
 				   hiddenName: 'codigo',
 				       id:'combo',
 				       width: 350,
