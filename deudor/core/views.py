@@ -237,10 +237,13 @@ def getCodigo(request):
         #Si es procurador
         usuario = request.user.usuario_set.get()
         if usuario.get_perfil_display() == 'procurador':
-            codigos = Codigo.objects.filter(~Q(descripcion = 'CERRAR FICHA'))
+            #los procuradores no pueden agregar pagos
+            codigos = Codigo.objects.exclude(
+                Q(codigo_id=143) | Q(codigo_id=148) |
+                #los procuradores no pueden cerrar fichas 
+                Q(codigo_id=165) | Q(codigo_id=166)
+                )
 
-
-        
     codigos = codigos.order_by('codigo_id')
     data = '({ total: %d, "results": %s })' % \
         (codigos.count(),
@@ -370,8 +373,7 @@ def putFicha(request):
 
     ficha.save()
 
-    return HttpResponse('{"success":"true","modificaciones":"'+campo_modificado +'" }', 
-                        content_type='application/json')
+    return HttpResponse('{"success":"true","modificaciones":"'+campo_modificado +'" }', content_type='application/json')
 
 
 def putEventoEdit(request):
@@ -469,8 +471,9 @@ def putEventoEdit(request):
     
 
     cambio.save()
-    return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', 
-                        content_type='application/json')
+    #return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', content_type='application/json')
+    return HttpResponse('{"success":true,"modificaciones":"'+campo_modificado +'" }', content_type='application/json')
+                        
 
 
 def buscar(request):
@@ -501,12 +504,10 @@ class EventoForm(forms.ModelForm):
 def putEvento(request):
     """ Ingreso de un nuevo evento para una ficha """
     
-    #bal = Balance(100000,20000,21000)
-    #bal.calcula_honorario(True)
+    return HttpResponse('{success:false ,"descripcion":"ok" }', content_type='application/json')
     
+
     if request.method == "POST":
-        
-            
         rut_deudor = request.POST.get('rut_deudor',False)
         codigo_id = request.POST.get('codigo',False)
 
@@ -516,22 +517,25 @@ def putEvento(request):
 
         if event_form.is_valid() and rut_deudor:
 
-
-
-
             ficha = Ficha.objects.get(persona__rut = rut_deudor)
 
             codigo  = Codigo.objects.get(codigo_id = codigo_id)
-
             event = event_form.save(commit=False)
+
+            abono = request.POST.get('abono',False)
+            if  abono and abono.strip() != '':
+                bal = Balance.objects.get(ficha=ficha.id)
+                bal.calcula_honorario(True)
+
+                if (bal.abonar(int(abono), True)): #con tribunales
+                    event.abono = abono
+                    event.capital = bal.a_capital
+                    event.interes = bal.a_interes
+                    event.costas = bal.a_costas
+                    event.honorario = bal.a_honorario
+                    event.gasto_judicial = 0
+                    bal.save()
             
-            #abono = request.POST.get('abono',False)
-
-            #if (int(abono) > 0):
-            #   bal.abonar(abono)
-            event.interes = '2311'
-            event.costas = '1234'
-
             event.ficha = ficha
             event.codigo = codigo
             
