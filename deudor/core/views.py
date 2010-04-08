@@ -24,10 +24,6 @@ from reportlab.lib.units import inch
 from reportlab.platypus import Spacer, SimpleDocTemplate, Table, TableStyle
 from cStringIO import StringIO
 
-#logica de balance de jjdonoso
-#from balance import Balance
-
-
 login_needed = user_passes_test(lambda u: not u.is_anonymous(), login_url='/deudor/login/')
 procurador_needed = user_passes_test(lambda u: not u.is_anonymous() and u.usuario_set.get() and u.usuario_set.get().get_perfil_display() == 'procurador', login_url='/deudor/login/')
 procurador_needed = user_passes_test(lambda u: not u.is_anonymous() and u.usuario_set.get() and u.usuario_set.get().get_perfil_display() == 'procurador', login_url='/deudor/login/')
@@ -372,7 +368,7 @@ def putFicha(request):
         campo_modificado = "Tribunal"
 
     ficha.save()
-
+    
     return HttpResponse('{"success":"true","modificaciones":"'+campo_modificado +'" }', content_type='application/json')
 
 
@@ -504,9 +500,6 @@ class EventoForm(forms.ModelForm):
 def putEvento(request):
     """ Ingreso de un nuevo evento para una ficha """
     
-    return HttpResponse('{success:false ,"descripcion":"ok" }', content_type='application/json')
-    
-
     if request.method == "POST":
         rut_deudor = request.POST.get('rut_deudor',False)
         codigo_id = request.POST.get('codigo',False)
@@ -523,11 +516,19 @@ def putEvento(request):
             event = event_form.save(commit=False)
 
             abono = request.POST.get('abono',False)
+            #return HttpResponse('{success:true ,"descripcion":codigo }', content_type='application/json')
             if  abono and abono.strip() != '':
-                bal = Balance.objects.get(ficha=ficha.id)
+                 try:
+                    bal = Balance.objects.get(ficha=ficha.id)
+                except:
+                    if ficha.deuda_inicial > 0:
+                        bal = Balance(ficha=ficha, capital=ficha.deuda_inicial);
+                    else:
+                        return HttpResponse('{success:false ,descripcion:"No se puede abonar a cuenta sin deuda inicial." }', 
+                                            content_type='application/json')
                 bal.calcula_honorario(True)
 
-                if (bal.abonar(int(abono), True)): #con tribunales
+                if (bal.abonar(int(abono), True)): #hardcoded con tribunales
                     event.abono = abono
                     event.capital = bal.a_capital
                     event.interes = bal.a_interes
@@ -535,6 +536,8 @@ def putEvento(request):
                     event.honorario = bal.a_honorario
                     event.gasto_judicial = 0
                     bal.save()
+                else:
+                    return HttpResponse('{success:false ,descripcion:"no se puede hacer abono por ese monto" }', content_type='application/json')
             
             event.ficha = ficha
             event.codigo = codigo
@@ -609,6 +612,9 @@ class FichaForm(forms.ModelForm):
         exclude = ('persona','creado_por',
                    'tribunal','procurador', 'estado')
         
+
+
+
 def putDeudor(request):
 
     if request.method == "POST":
@@ -624,11 +630,7 @@ def putDeudor(request):
         if persona_form.is_valid():
             persona = persona_form.save()
         else:
-            
-            #return HttpResponse(str(persona_form.errors))
-            data = '({ "success": false, "descripcion": %s })' % \
-                (persona_form.errors)
-
+            data = '({ "success": false, "descripcion": %s })' % (persona_form.errors)
             return HttpResponse(data, content_type='application/json')
 
 
@@ -637,11 +639,8 @@ def putDeudor(request):
         if ficha_form.is_valid():
             ficha = ficha_form.save(commit=False)
         else:
-             data = '({ "success": false, "descripcion": %s })' % \
-                (ficha_form.errors)
-
-             return HttpResponse(data, 
-                                 content_type='application/json')
+          data = '({ "success": false, "descripcion": %s })' % (ficha_form.errors)
+          return HttpResponse(data, content_type='application/json')
 
         ficha.persona = persona
 
@@ -662,8 +661,11 @@ def putDeudor(request):
 
             ficha.tribunal = tribunal
 
-        
         ficha.save()
+
+        #creamos el balance
+        bal = Balance(ficha=ficha, capital=ficha.deuda_inicial)
+        bal.save()
         
         return HttpResponse()
 
@@ -942,7 +944,13 @@ def loadData(line):
             ficha.fecha_creacion = fecha_creacion
             ficha.save()
             salida += "ficha actualizada"
-    
+
+     #creamos el balance
+        try:
+            bal = Balance.objects.get(ficha=ficha)
+        except:
+            bal = Balance(ficha=ficha, capital=ficha.deuda_inicial);
+
     return salida.strip()
 
 @login_needed    

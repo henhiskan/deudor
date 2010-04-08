@@ -115,6 +115,9 @@ class Ficha(models.Model):
     fecha_creacion = models.DateTimeField(blank=True, null=True)
 
     deuda_inicial = models.IntegerField(blank=True, null=True)
+
+    deuda_actual  = models.IntegerField(blank=True, null=True)
+
     procurador = models.ForeignKey(Usuario, blank=True, null=True)
 
     estado = models.CharField(max_length=1,choices=ESTADOS, default='0')
@@ -325,6 +328,9 @@ class Balance(models.Model):
             self.a_costas -= self.costas
             self.a_interes -= self.interes
             self.a_honorario -= self.honorario
-
+            
+            #actualizamos en la ficha el monto actual de la deuda
+#            ficha = Ficha.objects.get(id = ficha)
+#            ficha.deuda_actual= self.saldo()
             return True
 

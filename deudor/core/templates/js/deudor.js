@@ -188,6 +188,7 @@ Ext.onReady(function(){
 	{name: 'tribunal', type:'string', mapping:'fields.tribunal', convert: function(v) {return v ? v.fields.nombre : null;}},
 	{name: 'creado_por', type:'string', mapping:'extras.getNombreCreador' },
 	{name: 'deuda_inicial',type:'int',mapping:'fields.deuda_inicial'},
+        {name: 'deuda_actual',type:'int',mapping:'fields.deuda_actual'},
 	{name: 'procurador_name',type:'string',mapping:'extras.getNombreProcurador'},
 	{name: 'procurador',type:'string',mapping:'extras.getIdProcurador'},
 	{name: 'sistema_origen',type:'string',mapping:'fields.sistema_origen' }
@@ -388,6 +389,7 @@ Ext.onReady(function(){
 	{header: "Apellidos", width: 40, dataIndex: 'apellidos', sortable: true},
 	{header: "Rut", width: 25, dataIndex: 'rut_verif', sortable: true},
 	{header: "Deuda Inicial", width: 40, dataIndex: 'deuda_inicial', sortable: true},
+	{header: "Deuda Actual", width: 40, dataIndex: 'deuda_actual', sortable: true},
 
 	{header: "Tribunal", 
 	 width: 50, 
@@ -919,7 +921,7 @@ Ext.onReady(function(){
 					method:'POST',
 					    url:'putevento',
 					    success: function(response, request){
-					    Ext.MessageBox.alert('Exitoso', request.response.responseText);
+					    Ext.MessageBox.alert('Exitoso', 'Registro guardado');
 					    rut_deudor = registro_form.getForm().findField('rut_deudor').value;
                                             registro_form.getForm().reset();
 					    registro_form.getForm().findField('rut_deudor').setValue(rut_deudor);
@@ -929,7 +931,7 @@ Ext.onReady(function(){
 					    //ficha_store.load();
 					},
 					    failure: function ( response, request) { 
-					    Ext.MessageBox.alert('Error', request.response.responseText);
+					    Ext.MessageBox.alert('Error', request.result.descripcion);
 					    //Ext.MessageBox.alert('Error', 'Error en el servidor al guardar.');
                                             registro_form.getForm().reset();
 					}
@@ -1182,6 +1184,11 @@ Ext.onReady(function(){
 				       name: 'deuda_inicial',
 				       allowBlank:false
 				   }),
+                               /*   new Ext.form.NumberField({
+				       fieldLabel: 'Deuda actual',
+				       name: 'deuda_actual',
+				       allowBlank:false
+                                       }),*/
 			       new Ext.form.DateField({
 				       fieldLabel: 'Fecha asignación',
 				       name: 'fecha_creacion',
@@ -1278,7 +1285,7 @@ Ext.onReady(function(){
 					    ficha_store.load();
 					},
 					    failure: function ( result, request) { 
-					    Ext.MessageBox.alert('Error', request.result); 
+					    Ext.MessageBox.alert('Error', request.result.descripcion); 
 					}
 				    
 				    })
@@ -1291,7 +1298,7 @@ Ext.onReady(function(){
 				    //}
 				    }
 			    else{
-				Ext.MessageBox.alert('Errores', 'Por favor, corriga los errores.');
+				Ext.MessageBox.alert('Errores', 'Por favor, corrija los errores.');
 			    }
 			}
 		    },{
@@ -1491,7 +1498,16 @@ Ext.onReady(function(){
 	    fieldLabel: 'Deuda Inicial',
                 name: 'deuda_inicial',
 		width: 130
-		}
+		},
+        
+        {
+	    fieldLabel: 'Deuda Actual',
+            name: 'deuda_actual',
+            readOnly:'true',
+            enabled:'false',
+            width: 130,
+        }
+        
 
 		    ]
         }
@@ -1524,7 +1540,7 @@ Ext.onReady(function(){
 
 				    }
 			    else{
-				Ext.MessageBox.alert('Error', 'Por favor, corriga los errores.');
+				Ext.MessageBox.alert('Error', 'Por favor, corrija los errores.');
                                 win.close();
 			    }
 			}
