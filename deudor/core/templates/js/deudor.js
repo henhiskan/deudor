@@ -154,20 +154,20 @@ Ext.onReady(function(){
 	//////////// STORES          //////////////
 
 	// SortData Overload
-	Ext.override(Ext.data.Store, {
-		sortData : function(f, direction){
-		    direction = direction || 'ASC';
-		    var st = this.fields.get(f).sortType;
-		    var fn = function(r1, r2){
-			var v1 = st(r1.data[f], r1), v2 = st(r2.data[f], r2);
-			return v1 > v2 ? 1 : (v1 < v2 ? -1 : 0);
-		    };
-		    this.data.sort(direction, fn);
-		    if(this.snapshot && this.snapshot != this.data){
-			this.snapshot.sort(direction, fn);
-		    }
-		}
-	    });
+	// Ext.override(Ext.data.Store, {
+	// 	sortData : function(f, direction){
+	// 	    direction = direction || 'ASC';		    
+	// 	    var st = this.fields.get(f).sortType;
+	// 	    var fn = function(r1, r2){
+	// 		var v1 = st(r1.data[f], r1), v2 = st(r2.data[f], r2);
+	// 		return v1 > v2 ? 1 : (v1 < v2 ? -1 : 0);
+	// 	    };
+	// 	    this.data.sort(direction, fn);
+	// 	    if(this.snapshot && this.snapshot != this.data){
+	// 		this.snapshot.sort(direction, fn);
+	// 	    }
+	// 	}
+	//     });
 
 	ficha_store = new Ext.data.Store({
 		proxy: new Ext.data.HttpProxy({
@@ -221,11 +221,11 @@ Ext.onReady(function(){
 	 type:'date',
 	 dateFormat:'Y-m-d H:i:s',  
 	 mapping: 'fields.fecha', 
-	 sortType:  function(v, r){
-		fecha = r.get('fecha');
-		orden = r.get('orden');
-		return  (fecha!=''?fecha.dateFormat('YmdHi'):'') + orden;
-	    }
+	 // sortType:  function(v, r){
+	 // 	fecha = r.get('fecha');
+	 // 	orden = r.get('orden');
+	 // 	return  (fecha!=''?fecha.dateFormat('YmdHi'):'') + orden;
+	 //    }
 	},
 	{name: 'orden', type:'int',  mapping: 'fields.orden'},
 	{name: 'prox_pago', type:'date',dateFormat:'Y-m-d H:i:s',  mapping: 'fields.proximo_pago'},
@@ -918,31 +918,50 @@ Ext.onReady(function(){
 			text: 'Guardar',
 			handler: function(){
 			    var f = registro_form.getForm();
-			    if (f.isValid()){			    
-				f.submit({
-					method:'POST',
-					    url:'putevento',
-					    success: function(){
+			    rut_deudor = f.findField('rut_deudor').value;
+			    cod_abono = f.findField('codigo').value;
+			    //busqueda de rut en ficha para saber la deuda inicial
+			    rec_idx = ficha_store.find('rut',rut);
+			    if (rec_idx != -1){
+				deuda_inicial = ficha_store.data.item(0).data.deuda_inicial;
+				accesso = false;
+				if (cod_abono != 143 &&
+				    cod_abono != 148){
+				    accesso = true;
+				}
+				if ((cod_abono == 143 ||
+				     cod_abono == 148) && 
+				    deuda_inicial > 0){
+				    accesso = true;
+				}
+			        if (accesso){
+				    if (f.isValid()){			    
+					f.submit({
+						method:'POST',
+					        url:'putevento',
+						success: function(){
 					    //Ext.MessageBox.alert('Exitoso', 'Evento guardado');
-					    rut_deudor = registro_form.getForm().findField('rut_deudor').value
 						registro_form.getForm().reset();
-					    registro_form.getForm().findField('rut_deudor').setValue(rut_deudor);
+					        registro_form.getForm().findField('rut_deudor').setValue(rut_deudor);
 					    
-					    registro_win.hide();
-					    evento_store.load();
+					        registro_win.hide();
+					        evento_store.load();
 					    //ficha_store.load();
 					},
 					    failure: function ( result, request) { 
 					    Ext.MessageBox.alert('Error', request.result.descripcion); 
 					}
-				    })
-				    }
+					    })
+					    }
 			    else{
 				Ext.MessageBox.alert('Error', 'Por favor, corrija los errores.');
 			    }
-			}
-			
-		    },
+				}
+				else{
+				    Ext.MessageBox.alert('Error', 'Ficha sin deuda inicial');				    
+				}
+			    }
+			}},
 	{
 	    text: 'Cancelar',
 	    handler: function(){registro_win.hide();}
@@ -1013,64 +1032,75 @@ Ext.onReady(function(){
 
 
 			   //{%comment%}
-			   ,{
-			       xtype:'numberfield',
-				   fieldLabel: 'Capital',
-				   allowBlank: true,
-				   name: 'capital'
+			   // ,{
+			   //     xtype:'numberfield',
+			   // 	   fieldLabel: 'Capital',
+			   // 	   allowBlank: true,
+			   // 	   name: 'capital'
 				   
-				   }
-			   ,{
-			       xtype:'numberfield',
-				   fieldLabel: 'Interes',
-				   allowBlank: true,
-				   name: 'interes'
-				   }
-			   ,{
-			       xtype:'numberfield',
-				    fieldLabel: 'Honorario',
-				    allowBlank: true,
-				    name: 'honorario'
+			   // 	   }
+			   // ,{
+			   //     xtype:'numberfield',
+			   // 	   fieldLabel: 'Interes',
+			   // 	   allowBlank: true,
+			   // 	   name: 'interes'
+			   // 	   }
+			   // ,{
+			   //     xtype:'numberfield',
+			   // 	    fieldLabel: 'Honorario',
+			   // 	    allowBlank: true,
+			   // 	    name: 'honorario'
 				   
-				   }
+			   // 	   }
 			   //{%endcomment%}
-
-
 			   ,{
-				   layout:'column',			       
-				   columnWidth: 0.5,
-				   items:[ {
-				       layout:'form'
-					   ,bodyStyle:'padding:0 18px 0 0'
-					   ,labelAlign:'left'
-					   ,items:[
-						   new Ext.form.NumberField({
-							   name:'abono'
-							       ,fieldLabel:'Abono'
-							       ,allowBlank:true
-							       ,xtype:'numberfield'
-							       })
-						   ]
-					   }
-				       
-				       ,new Ext.form.Checkbox({
-					       boxLabel:'con tribunales?'
-						   ,checked:false
-						   })
-				       
-				       ]
-				   },
-
-			   {
 			       xtype:'numberfield',
-				   fieldLabel: 'Costas',
-				   allowBlank: true,
-				   name: 'costas'
-				   
-				   },
-			   //{% endifnotequal %}
+			       fieldLabel: 'Abono',
+			       allowBlank: true,
+			       name: 'abono'
+				    }
 
-			   new Ext.form.ComboBox({
+			   ,new Ext.form.Checkbox({
+				   boxLabel:'con tribunales?',
+				       name: '¿Con_tribunales',
+				       checked:false
+				       })
+			   
+			   // ,{
+			   // 	   layout:'column',
+			   // 	   columnWidth: 0.5,
+			   // 	   items:[ {
+			   // 	       layout:'form'
+			   // 		   ,bodyStyle:'padding:0 18px 0 0;border:0'
+			   // 		   ,labelAlign:'left'
+			   // 		   ,items:[
+			   // 			   new Ext.form.NumberField({
+			   // 				   name:'abono'
+			   // 				       ,fieldLabel:'Abono'
+			   // 				       ,allowBlank:true
+			   // 				       ,xtype:'numberfield'
+			   // 				       })
+			   // 			   ]
+			   // 		   }
+				       
+			   // 	       ,new Ext.form.Checkbox({
+			   // 		       boxLabel:'con tribunales?'
+			   // 			   ,checked:false
+			   // 			   })
+				       
+			   // 	       ]
+			   // 	   },
+
+			   // ,{
+			   //     xtype:'numberfield',
+			   // 	   fieldLabel: 'Costas',
+			   // 	   allowBlank: true,
+			   // 	   name: 'costas'
+				   
+			   // 	   },
+			   //{% endifnotequal %}
+			   
+			   ,new Ext.form.ComboBox({
 				   hiddenName: 'codigo',
 				       id:'combo',
 				       width: 350,
@@ -1306,6 +1336,62 @@ Ext.onReady(function(){
 	    });
 
 
+	//////////////////////////////////////////////////
+	///// Formulario de Calculo de Interes
+
+	interes_form = new Ext.FormPanel({
+		labelAlign: 'top',
+		frame:true,
+		buttonAlign: 'center',
+		items:[{
+			fieldLabel: 'Rut',
+			xtype: 'hidden',
+			name: 'rut',
+			readOnly:true,		
+			width: 130
+		    },
+		       new Ext.form.DateField({
+			       fieldLabel: 'Fecha Pago',
+			       name: 'fecha',
+			       allowBlank:false
+
+			   })
+
+		    //,new Ext.form.NumberField({
+		    //	       fieldLabel: 'Monto',
+		    //	       name: 'monto',
+		    //	       allowNegative: false,
+		    //	       allowDecimals: false
+		    //		   })
+		    ],
+		buttons: [{
+			text: 'Calcular',
+			handler: function(){
+			    var f = interes_form.getForm();
+			    if (f.isValid()){
+				f.submit({
+					method:'POST',
+					    url:'getinteres',
+					    success: function(result, request){
+					    req_json = Ext.util.JSON.decode(request.response.responseText);
+					    Ext.MessageBox.alert('Interes', req_json.interes);
+					}})
+				    }
+			    else{
+				Ext.MessageBox.alert('Errores', 'Por favor, corrija los errores.');
+			    }
+			}
+			
+		    },{
+			text: 'Cancelar',
+			handler: function(){win.hide();}
+		    
+		    }]
+	    });
+
+
+
+
 
 	////////////////////////////////////////////////////////////
 	//////// ventanas tipo Pop-Up
@@ -1340,6 +1426,14 @@ Ext.onReady(function(){
 		plain:'true',
 		layout: 'fit',
 		items: [ reporte_form]
+	    });
+
+
+	interes_win = new Ext.Window({
+		title: 'Calculo de Interes',
+		width: 200,
+		hight: 200,
+		items: [ interes_form]
 	    });
 
 	////////////////////////////////////////
@@ -1501,6 +1595,15 @@ Ext.onReady(function(){
 
 			],
 		buttons: [{
+			
+			text:"Calcular Interes",
+			handler:function(){
+			    interes_win.show();
+			    rut = preview.getForm().findField('rut').value.split('-')[0].replace(/\./g,'');
+			    interes_form.getForm().findField('rut').setValue(rut);
+			}
+		    },
+	                  {
 			text: 'Guardar',
 			handler: function(){
 			    var f = preview.getForm();

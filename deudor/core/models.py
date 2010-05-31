@@ -3,6 +3,8 @@ from django.db import models
 from django.contrib import admin
 from django.contrib.auth.models import User
 
+from settings import TASA_INTERES
+
 PERFIL_USUARIO = (
     ('0','administrador'),
     ('1','cobranza'),
@@ -10,7 +12,7 @@ PERFIL_USUARIO = (
 
 
 class Persona(models.Model):
-    nombres = models.CharField(max_length=80)
+    nombres = models.CharField(max_length=80, blank=True, null=True)
     apellidos = models.CharField(max_length=80)
     rut = models.IntegerField(primary_key=True )
     domicilio = models.CharField(max_length=150, null=True, blank = True)
@@ -118,6 +120,8 @@ class Ficha(models.Model):
     estado = models.CharField(max_length=1,choices=ESTADOS, default='0')
     sistema_origen = models.ForeignKey(SistemaOrigen, blank=True, null=True)
 
+    interes = models.IntegerField(blank=True, null=True)
+
     def __unicode__(self):
         if self.rol:
             return self.rol
@@ -151,6 +155,162 @@ class Ficha(models.Model):
             return self.persona.get_rut()
         else:
             return ''
+
+    def getCapitalPagado(self):
+        """ Devuelve la suma de todos los capitales pagados
+        de los eventos de la ficha
+        """
+        abonos = 0
+        for evento in self.evento_set.all():
+            if evento.capital:
+                abonos += evento.capital
+
+        return abonos
+
+    def getCapitalFaltante(self):
+        """ Devuelve el dinero faltante para
+        pagar la deuda inicial 
+        """
+        return self.deuda_inicial - self.getCapitalPagado()
+
+    def estaCapitalPagado(self):
+        """ Devuelve True si la suma de los capitales
+        pagados de los eventos de la ficha son iguales
+        a la deuda inicial de la ficha
+        """
+        abono = self.getCapitalPagado()
+        if abono == self.deuda_inicial:
+            return True
+        else:
+            return False
+
+
+    def getGastoJudicial(self):
+        """ Devuelve la suma de los gastos judiciales
+        de cada evento
+        """
+        gasto = 0
+        for evento in self.evento_set.all():
+            if evento.gasto_judicial != None:
+                gasto += evento.gasto_judicial
+        return gasto
+
+    def getCostasTotal(self):
+        """ Devuelve la suma de las costas de 
+        cada evento """
+        costa = 0
+        for evento in self.evento_set.all():
+            if evento.costas != None:
+                costa += evento.costas
+        return costa
+
+
+    def estaGastoJudicialPagado(self):
+        """ Devuelve True si la suma de los 
+        gastos judiciales son iguales a las costas"""
+
+        gastos = self.getGastoJudicial()
+        costas = self.getCostasTotal()
+        if gastos == costas:
+            return True
+        else:
+            return False
+
+    def getGastoJudicialFaltante(self):
+        """ Devuelve el valor de gastos judiciales
+        faltante para saldarlos """
+
+        gastos = self.getGastoJudicial()
+        costas = self.getCostasTotal()
+        if gastos > costas:
+            return gastos - costas
+        else:
+            return 0
+
+    def getPrimerPago(self):
+        """ Devuelve el evento donde se realizo 
+        el primer pago """
+        
+        for evento in self.evento_set.all().order_by('fecha'):
+            if (evento.codigo_id == 143 or \
+                    evento.codigo_id == 148):
+                return evento
+            
+    def getInteres(self, fecha_inicio=None, fecha_fin=None):
+        """ 
+        Calcula el interes automaticamente tomando
+        las fechas de asignacion y primer pago
+        
+        Si las fechas por argumento son distintas a None, 
+        entonces se utilizan esas fechas para el calculo de
+        interes
+
+        Return None si no tiene fecha de creacion
+
+        """
+        
+        if not self.fecha_creacion:
+            return None
+
+        dias = 1
+        if fecha_inicio == None or fecha_fin == None:
+            fecha_primer_pago = self.getPrimerPago().fecha
+            dias = (fecha_primer_pago - self.fecha_creacion).days
+
+        else:
+            dias = (fecha_fin - fecha_inicio).days
+            
+        return self.deuda_inicial * dias * TASA_INTERES/100
+
+
+    def estaInteresPagado(self):
+        """ Devuelve True si se han pagado la totalidad
+        de los intereses """
+        
+        interes_pagado = 0
+        for evento in self.evento_set.all().order_by('fecha'):
+            if evento.interes != None:
+                interes_pagado += evento.interes
+            
+        if interes_pagado >= self.interes:
+            return True
+        else:
+            return False
+
+
+    def getInteresPagado(self):
+        """ Devuelve la suma de los intereses pagados"""
+
+        interes_pagado = 0
+        for evento in self.evento_set.all().order_by('fecha'):
+            interes_pagado = evento.interes
+
+        return interes_pagado
+
+
+    def getInteresFaltante(self):
+        """ Devuelve el interes faltante
+        para cancelar el monto total """
+        
+        interes_pagado = self.getInteresPagado()
+
+        if self.interes > interes_pagado:
+            return self.interes - interes_pagado
+        else:
+            return 0
+        
+    def setInteres(self, interes = None):
+        """
+        Setea el interes de una ficha.
+        Si no ingresan interes, entonces lo calcula
+        a partir del primer pago
+        """
+        if interes:
+            self.interes = interes
+        else:
+            self.interes = self.getInteres()
+            
+        self.save()
 
 class FormaPago(models.Model):
     codigo = models.IntegerField()

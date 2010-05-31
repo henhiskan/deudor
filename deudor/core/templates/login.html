@@ -13,7 +13,7 @@
 <div id="bienvenida">
   Por favor ingrese su nombre de usuario y clave para acceder al sistema.
 <br/>
-<form method="post" action=".">
+<form method="post" action=".">{% csrf_token %}
  Usuario: <input id="id_username" type="text" name="username" />
  <br />
  Clave: <input type="password" name="password" id="id_password" />

@@ -503,7 +503,8 @@ def putEvento(request):
         codigo_id = request.POST.get('codigo',False)
 
         forma_pago_codigo = request.POST.get('formapago_codigo',False)
-        
+        abono = int(request.POST.get("abono",False))
+
         event_form = EventoForm(request.POST)
 
         if event_form.is_valid() and rut_deudor:
@@ -511,11 +512,55 @@ def putEvento(request):
             ficha = Ficha.objects.get(persona__rut = rut_deudor)
 
             codigo  = Codigo.objects.get(codigo_id = codigo_id)
-
+            
             event = event_form.save(commit=False)
             event.ficha = ficha
             event.codigo = codigo
             
+            #Desagregacion del Abono
+            capital = ficha.getCapitalPagado()
+            capital_faltante = ficha.getCapitalFaltante()
+            
+            #Pago de deuda inicial solo si este no se
+            # a pagado anteriormente
+            if not ficha.estaCapitalPagado():
+                
+                if abono > capital_faltante:
+                    event.capital = capital_faltante
+                    abono = abono - capital_faltante
+
+                else:
+                    event.capital = abono
+                    #Queda sin vuelto
+                    abono = 0
+
+                #se empieza por pagar las costas (gastos judiciales)
+                #Solo si ya no se han pagado, y si queda abono
+                if abono > 0 and not ficha.estaGastoJudicialPagado():
+                    deuda_gasto = ficha.getGastoJudicialFaltante()
+
+                    if abono > deuda_gasto:
+                        #Alcanza para pagar deuda completa
+                        event.costas =  deuda_gasto
+                        abono = abono - deuda_gasto
+                    else:
+                        #Solo se paga lo que alcance
+                        event.costas = abono
+                        abono = 0
+
+                #Luego se pagan los intereses si es que no se han 
+                #pagado y  si queda abono
+                if abono > 0 and not ficha.estaInteresPagado():
+                    interes_faltante = ficha.getInteresFaltante()
+                    if abono > interes_faltante:
+                        #Se paga todo el interes
+                        event.interes = interes_faltante
+                        abono = abono - interes_faltante
+                    else:
+                        #Solo se paga el interes que alcanza
+                        event.interes = abono
+                        abono = 0
+
             if forma_pago_codigo:
                 formapago = FormaPago.objects.get(codigo= forma_pago_codigo)
                 event.forma_pago = formapago
@@ -661,7 +706,7 @@ def updateDeudor(request):
         if persona_form.is_valid():
             persona = persona_form.save()
         else:            
-            data = '({ "success": false, "descripcion": Error en Persona %s })' % \
+            data = '({ "success": false, "descripcion": ''Error en Persona %s ''})' % \
                 (persona_form.errors)
 
             return HttpResponse(data,
@@ -1209,3 +1254,34 @@ def imprimir(request):
     buffer.close()
     return response
     
+
+
+@login_needed
+def getInteres(request):
+    """
+    Devuelve el interes de una ficha desde una
+    fecha de pago y monto cancelado
+    """
+
+    if request.method == "POST":
+        rut = request.POST.get('rut',False)
+        fecha_txt = request.POST.get('fecha',False)
+
+        fecha_pago = \
+            datetime.datetime(*time.strptime(fecha_txt,'%d/%m/%Y')[0:3])
+    
+        #Busqueda de ficha
+        ficha = None
+        try:
+            ficha = Ficha.objects.get(persona__rut=13604436)
+        except DoesNotExist:
+
+            data = '({ "success": false, "descripcion": "No existe ficha con ese rut"})' 
+            return HttpResponse(data, content_type='application/json')
+
+        interes = ficha.getInteres(ficha.fecha_creacion, 
+                                   fecha_pago)
+        
+
+        data = '({ "success": true, "interes": %.f})' % interes
+        return HttpResponse(data, content_type='application/json')

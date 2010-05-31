@@ -6,14 +6,14 @@ import datetime
 import time
 import re
 
-sys.path.append('/home/sistema/aplicacion/deudor')
+sys.path.append('/home/rrossel/Personal/Proyectos/deudor/deudor')
 os.environ['DJANGO_SETTINGS_MODULE']='settings'
 
 from core.models import *
 from core.views import loadData
 
 
-data =csv.reader(open(sys.argv[1],"r"), delimiter=',')
+data =csv.reader(open(sys.argv[1],"r"), delimiter=';')
 lines = ''
 
 for row in data:
@@ -25,6 +25,7 @@ for row in data:
     nombres_apellidos = \
         [  a for a in  d_nombres.split(" ") if a!= ""]
 
+    print row
     if (int(row[1].strip()[:-1]) == int(row[2].strip()[:-2])):
         #Entonces la data es apellidos-nombres
         apellidos =  " ".join(nombres_apellidos[0:2]) 
