@@ -2,6 +2,7 @@
 from django.db import models
 from django.contrib import admin
 from django.contrib.auth.models import User
+from datetime import datetime
 
 from settings import TASA_INTERES
 
@@ -25,7 +26,9 @@ class Persona(models.Model):
     correo = models.EmailField(blank=True,null=True)
 
     def __unicode__(self):
-        return u"%s %s" % (self.nombres, self.apellidos)
+#        return u"%s %s" % (self.nombres, self.apellidos)
+        return self.get_rut()
+
 
     def short_name(self):
         return u"%s %s" % (self.nombres.split(" ")[0], 
@@ -106,15 +109,17 @@ ESTADOS = (
 
 class Ficha(models.Model):
     persona = models.ForeignKey(Persona)
-    rol = models.TextField(max_length=100, blank=True, null=True)
-    carpeta = models.TextField(max_length=50, blank=True, null=True)
+    rol = models.TextField(max_length=15, blank=True, null=True)
+    carpeta = models.TextField(max_length=15, blank=True, null=True)
     tribunal = models.ForeignKey(Tribunal , blank=True, null=True)
 
     creado_por = models.ForeignKey(Usuario, related_name='usuario_set',blank=True, null=True)
     fecha_creacion = models.DateTimeField(blank=True, null=True)
 
-
     deuda_inicial = models.IntegerField(blank=True, null=True)
+
+    deuda_actual  = models.IntegerField(blank=True, null=True)
+
     procurador = models.ForeignKey(Usuario, blank=True, null=True)
 
     estado = models.CharField(max_length=1,choices=ESTADOS, default='0')
@@ -329,6 +334,7 @@ class Receptor(models.Model):
     class Meta:
         verbose_name_plural = "Receptores"
 
+#---------------------------------------------------------------------------
 class Evento(models.Model):
     ficha = models.ForeignKey(Ficha)
     fecha = models.DateTimeField()
@@ -342,6 +348,7 @@ class Evento(models.Model):
     forma_pago = models.ForeignKey(FormaPago, blank=True, null=True)
     capital = models.IntegerField(blank=True, null=True)
 
+    abono = models.IntegerField(blank=True, null=True)
     gasto_judicial = models.IntegerField(blank=True, null=True)
     honorario = models.IntegerField(blank=True, null=True)
     interes = models.IntegerField(blank=True, null=True)
@@ -353,6 +360,8 @@ class Evento(models.Model):
         return self.descripcion
 
 
+#---------------------------------------------------------------------------
+
 class Cambio(models.Model):
 
     ficha = models.ForeignKey(Ficha,blank=True, null=True)
@@ -360,10 +369,128 @@ class Cambio(models.Model):
     descripcion = models.TextField(max_length=500, blank=True, null=True)
     fecha = models.DateTimeField(blank=True, null=True)
 
-
+#---------------------------------------------------------------------------
 class Reporte(models.Model):
     nombre = models.TextField(max_length=50)
     sql = models.TextField(max_length=1000)
 
     def __unicode__(self):
         return self.nombre
+
+#---------------------------------------------------------------------------
+#el balance de cada deudor.
+class Balance(models.Model):
+    #ficha del deudor al cual pertenece este balance
+    ficha = models.ForeignKey(Ficha)
+    
+    #fecha del balance
+    fecha = models.DateTimeField(null=False, default = datetime.now())
+
+    #sumatoria de gastos judiciales
+    costas = models.IntegerField(null=False, default=0 )
+
+    #honorarios, calculados al momento de pagar la deuda
+    honorario = models.IntegerField(null=False, default=0)
+    
+    #intereses, calculados en funcion del interes diario y del capital adeudado
+    interes = models.IntegerField(null=False, default=0)
+
+    #deuda inicial con falabella
+    capital = models.IntegerField(null=False, default=0)
+
+
+    a_capital = 0
+    a_costas = 0
+    a_interes = 0
+    a_honorario = 0
+
+    # entrega el saldo pendiente
+    def saldo(self):
+        return self.capital + self.costas + self.interes + self.honorario
+
+    #retorna True si la deuda ha sido saldada.
+    def pagada(self):
+        if self.saldo(self) > 0:
+            return True
+        else:
+            return False
+
+
+    #calculo del interes en funcion de los dias transcurridos
+    def calcula_interes(self, fecha_convenio):
+        ficha = Ficha.objects.get(id = ficha)
+        fecha_asignacion = ficha.fecha_creacion
+        dias_transcurridos=abs(fecha_convenio - fecha_asignacion).days
+
+        interes_diario=3.99/30
+        interes = int(interes_diario *
+                      dias_transcurridos *
+                      self.capital / 100 )    
+
+    # Calcula el honorario en funcion de si el caso paso a demanda o no.
+    # En caso de que haya pasado a demanda el interes es mas alto.
+    def calcula_honorario(self, hay_demanda):
+        if hay_demanda:
+            porc_honorario = 0.2
+        else:
+            porc_honorario = 0.15
+        self.honorario = (self.capital + self.costas + self.interes)*porc_honorario
+        
+    def __unicode__(self):
+        return u'capital:%d, costas:%d, interes:%d, honorario:%d SALDO_TOTAL:%d'%(self.capital, self.costas, self.interes, self.honorario, self.saldo())
+
+    #accion de meterle plata al balance
+    def abonar(self, abono, paso_a_tribunal):
+        if abono <= 0:
+            return -1
+        elif abono > self.saldo():
+            #el abono no puede ser mayor a la deuda total
+            return -2
+        else:
+            #almacenamiento de valores inicial para hacer luego la diferencia de distribucion a cada item
+            self.a_capital = self.capital
+            self.a_costas = self.costas
+            self.a_interes = self.interes
+            self.a_honorario = self.honorario
+
+            if paso_a_tribunal:
+                abono_a_honorario = abono * 0.2
+            else:
+                abono_a_honorario = abono * 0.15
+            
+            if self.honorario > 0:
+                self.honorario = self.honorario - abono_a_honorario
+                abono_real = abono - abono_a_honorario
+                if self.honorario < 0:
+                    abono_real -= self.honorario
+                    self.honorario = 0
+            else:
+                abono_real = abono
+
+            if self.capital > 0:
+                self.capital = self.capital - abono_real
+                if self.capital < 0:
+                    self.costas += self.capital #le restamos el resto de capital a las costas
+                    self.capital = 0
+                    if self.costas < 0:
+                        self.interes += self.costas
+                        self.costas = 0
+            elif self.costas > 0:
+                self.costas = self.costas - abono_real
+                if self.costas < 0:
+                    self.interes += self.costas
+                    self.costas = 0
+            elif interes > 0:
+                self.interes = self.interes - abono_real
+
+            #resto el valor final al final para saber la diferencia
+            self.a_capital -= self.capital
+            self.a_costas -= self.costas
+            self.a_interes -= self.interes
+            self.a_honorario -= self.honorario
+            
+            #actualizamos en la ficha el monto actual de la deuda
+#            ficha = Ficha.objects.get(id = ficha)
+#            ficha.deuda_actual= self.saldo()
+            return True
+
