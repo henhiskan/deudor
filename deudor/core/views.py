@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.template import Context, loader
 
 from django.core import serializers
-
+from django.core.exceptions import ObjectDoesNotExist
 from django import forms
 from django.db.models import Q
 from django.db import connection
@@ -518,28 +518,9 @@ def putEvento(request):
             event = event_form.save(commit=False)
 
             abono = request.POST.get('abono',False)
+            if abono:
+                abono = int(abono)
             #return HttpResponse('{success:true ,"descripcion":codigo }', content_type='application/json')
-            if  abono and abono.strip() != '':
-                 try:
-                    bal = Balance.objects.get(ficha=ficha.id)
-                except:
-                    if ficha.deuda_inicial > 0:
-                        bal = Balance(ficha=ficha, capital=ficha.deuda_inicial);
-                    else:
-                        return HttpResponse('{success:false ,descripcion:"No se puede abonar a cuenta sin deuda inicial." }', 
-                                            content_type='application/json')
-                bal.calcula_honorario(True)
-
-                if (bal.abonar(int(abono), True)): #hardcoded con tribunales
-                    event.abono = abono
-                    event.capital = bal.a_capital
-                    event.interes = bal.a_interes
-                    event.costas = bal.a_costas
-                    event.honorario = bal.a_honorario
-                    event.gasto_judicial = 0
-                    bal.save()
-                else:
-                    return HttpResponse('{success:false ,descripcion:"no se puede hacer abono por ese monto" }', content_type='application/json')
             
             event.ficha = ficha
             event.codigo = codigo
@@ -679,7 +660,6 @@ def putDeudor(request):
             data = '({ "success": false, "descripcion": %s })' % (persona_form.errors)
             return HttpResponse(data, content_type='application/json')
 
-
         ficha_form = FichaForm(request.POST)
 
         if ficha_form.is_valid():
@@ -745,10 +725,26 @@ def updateDeudor(request):
             #Se obtiene la primera ficha. deberia tener solo una
 
             ficha = persona.ficha_set.all()[0]
+
+            #Chequeo de eventos anteriores.
+            # NO PERMITIR cambios de deuda inicial si ya existen pagos previos
+            capital_pagado = ficha.getCapitalPagado()
+            if capital_pagado > 0:
+                #deuda inicial no podra ser modificado
+                nueva_deuda_inicial = request.POST['deuda_inicial'] 
+                if ficha.deuda_inicial !=  nueva_deuda_inicial:
+                    msg="Existen pagos asociados a la deuda, por lo tanto " +\
+                        " no es posible modificar la deuda inicial"
+                    data = '({ "success": false, "descripcion": "%s" })' % msg
+                    return HttpResponse(data, 
+                                        content_type='application/json')
+
+
             ficha_form = FichaForm(request.POST, 
                                    instance=ficha)
         else:
-            ficha_form = FichaForm(request.POST,{'fecha_creacion':request.POST['fecha']})
+            ficha_form = FichaForm(request.POST,
+                                   {'fecha_creacion':request.POST['fecha']})
 
         if ficha_form.is_valid():
             ficha = ficha_form.save(commit=False)
@@ -773,6 +769,11 @@ def updateDeudor(request):
             tribunal = Tribunal.objects.get(nombre=nombre_tribunal)
 
             ficha.tribunal = tribunal
+
+        #Interes
+        interes = request.POST.get('interes',False)
+        if interes:
+            ficha.interes = interes
 
         ficha.save()
         
@@ -1305,9 +1306,8 @@ def getInteres(request):
         #Busqueda de ficha
         ficha = None
         try:
-            ficha = Ficha.objects.get(persona__rut=13604436)
-        except DoesNotExist:
-
+            ficha = Ficha.objects.get(persona__rut=rut)
+        except ObjectDoesNotExist:
             data = '({ "success": false, "descripcion": "No existe ficha con ese rut"})' 
             return HttpResponse(data, content_type='application/json')
 

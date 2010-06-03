@@ -946,7 +946,7 @@ Ext.onReady(function(){
 					    //ficha_store.load();
 					},
 					    failure: function ( response, request) { 
-					    Ext.MessageBox.alert('Error', request.result.descripcion);
+					    Ext.MessageBox.alert('Error', request.response.responseText);
 					    //Ext.MessageBox.alert('Error', 'Error en el servidor al guardar.');
                                             registro_form.getForm().reset();
 					}
@@ -1404,7 +1404,7 @@ Ext.onReady(function(){
 			
 		    },{
 			text: 'Cancelar',
-			handler: function(){win.hide();}
+			handler: function(){interes_win.hide();}
 		    
 		    }]
 	    });
@@ -1454,6 +1454,7 @@ Ext.onReady(function(){
 		title: 'Calculo de Interes',
 		width: 200,
 		hight: 200,
+		closeAction: 'hide',
 		items: [ interes_form]
 	    });
 
@@ -1618,9 +1619,11 @@ Ext.onReady(function(){
             readOnly:'true',
             enabled:'false',
             width: 130,
-        }
-        
-
+        },
+	{
+	    fieldLabel: 'Interes',
+	    name: 'interes'
+	}
 		    ]
         }
 
@@ -1654,7 +1657,7 @@ Ext.onReady(function(){
 					    ficha_store.load();
 					},
 					    failure: function ( result, request) { 
-					    Ext.MessageBox.alert('Error', request.result); 
+					    Ext.MessageBox.alert('Error', request.result.descripcion); 
 					}
 				    
 				    })
