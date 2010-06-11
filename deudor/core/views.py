@@ -525,7 +525,8 @@ def putEvento(request):
             abono = request.POST.get('abono',False)
             if abono:
                 abono = int(abono)
-
+	    else:
+		abono =0
             con_tribunales = request.POST.get('con_tribunales',
                                               False)
             if con_tribunales:

@@ -938,8 +938,8 @@ Ext.onReady(function(){
 				error_msg = '';
 				if ((cod_abono == 143 ||
 				     cod_abono == 148) && 
-				    deuda_inicial == 0 ||
-				    interes == ""){
+				    (deuda_inicial == 0 ||
+				    interes == "")){
 				    accesso =false;
 				    if (interes == "")
 					error_msg ="Sin interes";
