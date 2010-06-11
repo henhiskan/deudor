@@ -4,13 +4,14 @@ from django.contrib.auth.decorators import user_passes_test
 from django.template import Context, loader
 
 from django.core import serializers
-
+from django.core.exceptions import ObjectDoesNotExist
 from django import forms
 from django.db.models import Q
 from django.db import connection
 from django.contrib.auth.models import User
 
 from core.models import *
+from settings import HONORARIO, HONORARIO_TRIB
 
 import pyExcelerator
 import tempfile
@@ -23,7 +24,6 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.platypus import Spacer, SimpleDocTemplate, Table, TableStyle
 from cStringIO import StringIO
-
 
 login_needed = user_passes_test(lambda u: not u.is_anonymous(), login_url='/deudor/login/')
 procurador_needed = user_passes_test(lambda u: not u.is_anonymous() and u.usuario_set.get() and u.usuario_set.get().get_perfil_display() == 'procurador', login_url='/deudor/login/')
@@ -217,7 +217,14 @@ def getFicha(request):
          serializers.serialize('json', 
                                fichas[start:limit], 
                                indent=4, 
-                               extras=('getNombreCreador','getNombreProcurador','getRutDeudor','getIdProcurador',),
+                               extras=('getNombreCreador',
+                                       'getNombreProcurador',
+                                       'getRutDeudor',
+                                       'getIdProcurador',
+                                       'getCapitalFaltante',
+                                       'getGastoJudicialFaltante',
+                                       'getInteresFaltante',
+                                       'getDeudaActual',),
                                relations=({'procurador':{},'tribunal':{},'persona':{},'creado_por':{}})))
 
 
@@ -234,10 +241,13 @@ def getCodigo(request):
         #Si es procurador
         usuario = request.user.usuario_set.get()
         if usuario.get_perfil_display() == 'procurador':
-            codigos = Codigo.objects.filter(~Q(descripcion = 'CERRAR FICHA'))
+            #los procuradores no pueden agregar pagos
+            codigos = Codigo.objects.exclude(
+                Q(codigo_id=143) | Q(codigo_id=148) |
+                #los procuradores no pueden cerrar fichas 
+                Q(codigo_id=165) | Q(codigo_id=166)
+                )
 
-
-        
     codigos = codigos.order_by('codigo_id')
     data = '({ total: %d, "results": %s })' % \
         (codigos.count(),
@@ -366,9 +376,8 @@ def putFicha(request):
         campo_modificado = "Tribunal"
 
     ficha.save()
-
-    return HttpResponse('{"success":"true","modificaciones":"'+campo_modificado +'" }', 
-                        content_type='application/json')
+    
+    return HttpResponse('{"success":true,"modificaciones":"'+campo_modificado +'" }', content_type='application/json')
 
 
 def putEventoEdit(request):
@@ -466,8 +475,9 @@ def putEventoEdit(request):
     
 
     cambio.save()
-    return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', 
-                        content_type='application/json')
+    #return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', content_type='application/json')
+    return HttpResponse('{"success":true,"modificaciones":"'+campo_modificado +'" }', content_type='application/json')
+                        
 
 
 def buscar(request):
@@ -494,16 +504,14 @@ class EventoForm(forms.ModelForm):
         model = Evento
         exclude = ('ficha','codigo','forma_pago')
 
+
 def putEvento(request):
     """ Ingreso de un nuevo evento para una ficha """
-
+    
     if request.method == "POST":
-        
         rut_deudor = request.POST.get('rut_deudor',False)
         codigo_id = request.POST.get('codigo',False)
-
         forma_pago_codigo = request.POST.get('formapago_codigo',False)
-        
         event_form = EventoForm(request.POST)
 
         if event_form.is_valid() and rut_deudor:
@@ -513,9 +521,79 @@ def putEvento(request):
             codigo  = Codigo.objects.get(codigo_id = codigo_id)
 
             event = event_form.save(commit=False)
+
+            abono = request.POST.get('abono',False)
+            if abono:
+                abono = int(abono)
+
+            con_tribunales = request.POST.get('con_tribunales',
+                                              False)
+            if con_tribunales:
+                honorario = abono - round(abono / HONORARIO_TRIB)
+            else:
+                honorario = abono - round(abono / HONORARIO)
+            abono = abono - honorario
+
             event.ficha = ficha
             event.codigo = codigo
+            event.honorario = honorario
+
+            #Desagregacion del Abono
+            capital = ficha.getCapitalPagado()
+            capital_faltante = ficha.getCapitalFaltante()
             
+            #Pago de deuda inicial solo si este no se
+            # a pagado anteriormente
+            data = ""
+            if not ficha.estaCapitalPagado():
+                
+                if abono > capital_faltante:
+                    event.capital = capital_faltante
+                    abono = abono - capital_faltante
+
+                else:
+                    event.capital = abono
+                    #Queda sin vuelto
+                    abono = 0
+
+            #se empieza por pagar las costas (gastos judiciales)
+            #Solo si ya no se han pagado, y si queda abono
+            gasto_jud_nuevo = 0
+            try:
+                gasto_jud_nuevo = int(event.gasto_judicial)
+            except:
+                pass
+            
+            if abono > 0:
+                deuda_gasto = ficha.getGastoJudicialFaltante() + gasto_jud_nuevo
+
+                if abono > deuda_gasto:
+                    #Alcanza para pagar deuda completa
+                    event.costas =  deuda_gasto
+                    abono = abono - deuda_gasto
+                else:
+                    #Solo se paga lo que alcance
+                    event.costas = abono
+                    abono = 0
+
+            #Luego se pagan los intereses si es que no se han 
+            #pagado y  si queda abono
+            #SOLO PARA DEBUG SE SETEA INTERES
+            interes_debug =0
+            if abono > 0 and not ficha.estaInteresPagado():
+                interes_faltante = ficha.getInteresFaltante()
+                if abono > interes_faltante:
+                    #Se paga todo el interes
+                    event.interes = interes_faltante
+                    abono = abono - interes_faltante
+                    interes_debug = interes_faltante
+                else:
+                    #Solo se paga el interes que alcanza
+                    event.interes = abono
+                    abono = 0
+                    interes_debug = event.interes
+                data = "Interes %s , Abono %s " % (interes_debug, abono )
+
             if forma_pago_codigo:
                 formapago = FormaPago.objects.get(codigo= forma_pago_codigo)
                 event.forma_pago = formapago
@@ -536,21 +614,23 @@ def putEvento(request):
 
             #Si el codigo fue "CERRAR FICHA", entonces 
             # se procede a cerrar la ficha
-            if codigo.descripcion == 'CERRAR FICHA':
+            if codigo.codigo_id == 165:
                 ficha.estado = '1'
                 ficha.save()
             
             #Si el codigo fue "INCOBRABLE", entonces
             # se procede a setear ese campo
-            if codigo.descripcion == 'INCOBRABLE':
+            if codigo.codigo_id == 166:
                 ficha.estado = '2'
                 ficha.save()
 
-            return HttpResponse()
+            msg = '({ "success": true, "descripcion": "%s" })' % (data)
+
+            return HttpResponse(msg, content_type='application/json')
 
         else:
             
-            data = '({ "success": false, "descripcion": %s })' % \
+            data = '({ "success": false, "descripcion": "%s" })' % \
                 (event_form.errors)
 
 
@@ -586,6 +666,9 @@ class FichaForm(forms.ModelForm):
         exclude = ('persona','creado_por',
                    'tribunal','procurador', 'estado')
         
+
+
+
 def putDeudor(request):
 
     if request.method == "POST":
@@ -601,24 +684,16 @@ def putDeudor(request):
         if persona_form.is_valid():
             persona = persona_form.save()
         else:
-            
-            #return HttpResponse(str(persona_form.errors))
-            data = '({ "success": false, "descripcion": %s })' % \
-                (persona_form.errors)
-
+            data = '({ "success": false, "descripcion": %s })' % (persona_form.errors)
             return HttpResponse(data, content_type='application/json')
-
 
         ficha_form = FichaForm(request.POST)
 
         if ficha_form.is_valid():
             ficha = ficha_form.save(commit=False)
         else:
-             data = '({ "success": false, "descripcion": %s })' % \
-                (ficha_form.errors)
-
-             return HttpResponse(data, 
-                                 content_type='application/json')
+          data = '({ "success": false, "descripcion": %s })' % (ficha_form.errors)
+          return HttpResponse(data, content_type='application/json')
 
         ficha.persona = persona
 
@@ -639,8 +714,11 @@ def putDeudor(request):
 
             ficha.tribunal = tribunal
 
-        
         ficha.save()
+
+        #creamos el balance
+        bal = Balance(ficha=ficha, capital=ficha.deuda_inicial)
+        bal.save()
         
         return HttpResponse()
 
@@ -661,7 +739,7 @@ def updateDeudor(request):
         if persona_form.is_valid():
             persona = persona_form.save()
         else:            
-            data = '({ "success": false, "descripcion": Error en Persona %s })' % \
+            data = '({ "success": false, "descripcion": ''Error en Persona %s ''})' % \
                 (persona_form.errors)
 
             return HttpResponse(data,
@@ -674,10 +752,26 @@ def updateDeudor(request):
             #Se obtiene la primera ficha. deberia tener solo una
 
             ficha = persona.ficha_set.all()[0]
+
+            #Chequeo de eventos anteriores.
+            # NO PERMITIR cambios de deuda inicial si ya existen pagos previos
+            capital_pagado = ficha.getCapitalPagado()
+            if capital_pagado > 0:
+                #deuda inicial no podra ser modificado
+                nueva_deuda_inicial = request.POST['deuda_inicial'] 
+                if ficha.deuda_inicial !=  nueva_deuda_inicial:
+                    msg="Existen pagos asociados a la deuda, por lo tanto " +\
+                        " no es posible modificar la deuda inicial"
+                    data = '({ "success": false, "descripcion": "%s" })' % msg
+                    return HttpResponse(data, 
+                                        content_type='application/json')
+
+
             ficha_form = FichaForm(request.POST, 
                                    instance=ficha)
         else:
-            ficha_form = FichaForm(request.POST,{'fecha_creacion':request.POST['fecha']})
+            ficha_form = FichaForm(request.POST,
+                                   {'fecha_creacion':request.POST['fecha']})
 
         if ficha_form.is_valid():
             ficha = ficha_form.save(commit=False)
@@ -702,6 +796,11 @@ def updateDeudor(request):
             tribunal = Tribunal.objects.get(nombre=nombre_tribunal)
 
             ficha.tribunal = tribunal
+
+        #Interes
+        interes = request.POST.get('interes',False)
+        if interes:
+            ficha.interes = interes
 
         ficha.save()
         
@@ -821,10 +920,23 @@ def deleteEvento(request):
 
     id_evento =  request.GET.get('id', False)
     if id_evento:
-        evento = Evento.objects.get(id = id_evento)
-        evento.delete()
-    
-    return HttpResponse()
+        data = '({ "success": true, "descripcion": " exitoso"})'
+        try:
+            evento = Evento.objects.get(id = id_evento)
+            #Verificar si el evento tiene gastos judiciales asociados
+            if evento.gasto_jucidial > 0:
+                ficha = evento.ficha
+                gastos_judicial = ficha.getGastoJudicial()
+                costas_totales = ficha.getCostasTotal()
+                if (costas_totales - evento.costas)  >  gastos_judicial:
+                    data = '({ "success": false, "descripcion": "El evento no puede ser eliminado por las costas pagadas "})'
+                else:
+                    evento.delete()
+        except:
+            data = '({ "success": false, "descripcion": "El registro ya fue eliminado "})'
+
+    return HttpResponse(data,
+                        content_type='application/json')
     
 
 def deleteFicha(request):
@@ -919,7 +1031,13 @@ def loadData(line):
             ficha.fecha_creacion = fecha_creacion
             ficha.save()
             salida += "ficha actualizada"
-    
+
+     #creamos el balance
+        try:
+            bal = Balance.objects.get(ficha=ficha)
+        except:
+            bal = Balance(ficha=ficha, capital=ficha.deuda_inicial);
+
     return salida.strip()
 
 @login_needed    
@@ -1209,3 +1327,33 @@ def imprimir(request):
     buffer.close()
     return response
     
+
+
+@login_needed
+def getInteres(request):
+    """
+    Devuelve el interes de una ficha desde una
+    fecha de pago y monto cancelado
+    """
+
+    if request.method == "POST":
+        rut = request.POST.get('rut',False)
+        fecha_txt = request.POST.get('fecha',False)
+
+        fecha_pago = \
+            datetime.datetime(*time.strptime(fecha_txt,'%d/%m/%Y')[0:3])
+    
+        #Busqueda de ficha
+        ficha = None
+        try:
+            ficha = Ficha.objects.get(persona__rut=rut)
+        except ObjectDoesNotExist:
+            data = '({ "success": false, "descripcion": "No existe ficha con ese rut"})' 
+            return HttpResponse(data, content_type='application/json')
+
+        interes = ficha.getInteres(ficha.fecha_creacion, 
+                                   fecha_pago)
+        
+
+        data = '({ "success": true, "interes": %.f})' % interes
+        return HttpResponse(data, content_type='application/json')

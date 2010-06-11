@@ -7,7 +7,7 @@ import time
 import re
 import signal
 
-sys.path.append('/home/sistema/aplicacion/deudor/')
+sys.path.append('/home/rrossel/Personal/Proyectos/deudor/deudor')
 os.environ['DJANGO_SETTINGS_MODULE']='settings'
 signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
@@ -15,7 +15,7 @@ from core.models import *
 from core.views import loadData
 
 
-data =csv.reader(open(sys.argv[1],"r"), delimiter=',')
+data =csv.reader(open(sys.argv[1],"r"), delimiter=';')
 lines = ''
 
 for row in data:
@@ -27,6 +27,7 @@ for row in data:
         except:
             print "Deudor %s, Fecha ficha no existe o mal formada " % \
                 ( rut )
+	    print "Fecha:", row[1]
             continue
 
     orden = row[2]

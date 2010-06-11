@@ -33,5 +33,6 @@ urlpatterns = patterns('',
     (r'^deudorjs','core.views.getDeudorJs'),
     (r'^cargarDatos','core.views.cargarDatos'),
     (r'^printFicha','core.views.imprimir'),
+    (r'^getinteres','core.views.getInteres'),                       
                        
 )
