@@ -1407,8 +1407,10 @@ Ext.onReady(function(){
 					    url:'getinteres',
 					    success: function(result, request){
 					    req_json = Ext.util.JSON.decode(request.response.responseText);
-					    preview.getForm().findField('interes').setValue(req_json.interes);
 					    //Ext.MessageBox.alert('Interes', req_json.interes);
+					//Ext.MessageBox.alert(preview.getForm().findField('interes').getValue());
+					interes_field = preview.getForm().findField('interes');
+					interes_field.setValue(req_json.interes);
 					}})
 				    }
 			    else{
