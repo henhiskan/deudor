@@ -947,6 +947,8 @@ def deleteEvento(request):
                 data = '({ "success": false, "descripcion": "El evento no puede ser eliminado por las costas pagadas "})'
             else:
                 evento.delete()
+        else:
+            evento.delete()
         #except:
         #    data = '({ "success": false, "descripcion": "El registro ya fue eliminado "})'
 
