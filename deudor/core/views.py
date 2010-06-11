@@ -776,7 +776,6 @@ def updateDeudor(request):
                     return HttpResponse(data, 
                                         content_type='application/json')
 
-
             ficha_form = FichaForm(request.POST, 
                                    instance=ficha)
         else:
@@ -816,7 +815,6 @@ def updateDeudor(request):
         
         return HttpResponse()
     
-
 
 def getReporte(request):
 

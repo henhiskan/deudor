@@ -1752,9 +1752,9 @@ Ext.onReady(function(){
 	reporte_grid.on('rowdblclick', function(grid, rowIdx, e) {
 		record= grid.getStore().getAt(rowIdx);
 
-		if (!Ext.fly('frmDummy')) {
+		if (!Ext.fly('frmDummyReporte')) {
 		    var frm = document.createElement('form');
-		    frm.id = 'frmDummy';
+		    frm.id = 'frmDummyReporte';
 		    frm.name = id;
 		    frm.className = 'x-hidden';
 		    document.body.appendChild(frm);
@@ -1765,7 +1765,7 @@ Ext.onReady(function(){
 			url : 'getreporte' , 
 			    params : { nombre : record.data.nombre },
 			    method: 'POST',
-			    form: Ext.fly('frmDummy'),
+			    form: Ext.fly('frmDummyReporte'),
 			    isUpload: true,
 			    success: function ( result, request) { 
 
