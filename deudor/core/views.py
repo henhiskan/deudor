@@ -768,7 +768,7 @@ def updateDeudor(request):
             capital_pagado = ficha.getCapitalPagado()
             if capital_pagado > 0:
                 #deuda inicial no podra ser modificado
-                nueva_deuda_inicial = request.POST['deuda_inicial'] 
+                nueva_deuda_inicial = int(request.POST['deuda_inicial'])
                 if ficha.deuda_inicial !=  nueva_deuda_inicial:
                     msg="Existen pagos asociados a la deuda, por lo tanto " +\
                         " no es posible modificar la deuda inicial"

@@ -618,13 +618,13 @@ Ext.onReady(function(){
 		return '$' + v ;
 	    }
 
-          /*
+
 	 , editor: new Ext.form.NumberField({
 		 allowBlank: true,
 		 allowNegative: false,
 		 allowDecimals: false
 	     })
-          */
+
 	}
 	,{header: "Honorario", width: 40, 
 	 dataIndex: 'honorario', 
@@ -634,13 +634,13 @@ Ext.onReady(function(){
 		return '$' + v ;
 	    }
 
-          /*
+
 	 , editor: new Ext.form.NumberField({
          allowBlank: true,
          allowNegative: false,
          allowDecimals: false
          })
-          */
+
 	}
 	,{header: "Costas", width: 40,
 	 dataIndex: 'costas', 
@@ -650,13 +650,13 @@ Ext.onReady(function(){
 		return '$' + v ;
 	    }
 
-          /*
+
 	 ,editor: new Ext.form.NumberField({
 		 allowBlank: true,
 		 allowNegative: false,
 		 allowDecimals: false
 	     })
-          */
+
 	},
 	{header: "Interes", width: 40,
 	 dataIndex: 'interes', 
@@ -665,13 +665,13 @@ Ext.onReady(function(){
 	 summaryRenderer: function(v, params, data){
 		return '$' + v ;
 	    }
-         /*
+
 	 ,editor: new Ext.form.NumberField({
 		 allowBlank: true,
 		 allowNegative: false,
 		 allowDecimals: false
 	     })
-         */
+
 	},
 	{header: "Total", width: 40, 
 	 dataIndex: 'total', 
@@ -1624,45 +1624,52 @@ Ext.onReady(function(){
 	    }),
 
 	{
-	    fieldLabel: 'Deuda Inicial',
+	    fieldLabel: 'Capital Inicial',
                 name: 'deuda_inicial',
 		width: 130
 		},
         
-        {
-	    fieldLabel: 'Deuda Actual',
-            name: 'deuda_actual',
-            readOnly:'true',
-            enabled:'false',
-            width: 130,
-        },
 	{
-	    fieldLabel: 'Capital Adeud.',
-	    name :'capital_adeudado',
-	    readOnly:'true'
-	},
-	{
-	    fieldLabel: 'Interes',
-	    name: 'interes'
+	    fieldLabel: 'Interés Inicial',
+	    name: 'interes',
+	    width: 130
 	    
 	},
 	{
-	    fieldLabel:'Interes adeud.',
-	    name:'interes_adeudado',
-	    readOnly:'true'
+	    fieldLabel: 'Capital faltante',
+	    name :'capital_adeudado',
+	    readOnly:'true',
+	    width: 130
 	},
 	{
-	    fieldLabel: 'Costas Adeud.',
+	    fieldLabel:'Interés faltante',
+	    name:'interes_adeudado',
+	    readOnly:'true',
+	    width: 130
+	},
+	
+	{
+	    fieldLabel: 'Costas faltante',
 	    name: 'costas_adeudado',
-	    readOnly: 'true'
-	}
+	    readOnly: 'true',
+	    width: 130
+	},
+        {
+	    fieldLabel: 'Total adeudado',
+            name: 'deuda_actual',
+            readOnly:'true',
+            enabled:'false',
+            width: 130
+        }
+
+
 		    ]
         }
 
 			],
 		buttons: [{
 			
-			text:"Calcular Interes",
+			text:"Calcular Interés",
 			handler:function(){
 			    interes_win.show();
 			    rut = preview.getForm().findField('rut').value.split('-')[0].replace(/\./g,'');
