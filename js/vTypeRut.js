@@ -103,9 +103,8 @@ Ext.apply(Ext.form.VTypes, {
 		dvr = dvi + "";
 	    }
 	
-	if ( dvr != dv.toLowerCase() )
-	    {
-		return false;
+	if ( dvr != dv.toLowerCase() )  {
+	    return false;
 	    }
 	return true;
 	}

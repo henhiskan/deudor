@@ -2,6 +2,9 @@
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import user_passes_test
 from django.template import Context, loader
+from django.core.context_processors import csrf
+from django.shortcuts import render_to_response
+
 
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
@@ -55,11 +58,14 @@ def main(request):
 @login_needed
 def ficha(request):
     
-    t = loader.get_template('ficha.html')
-    c = Context({
-            })
-    return HttpResponse(t.render(c))
-    
+    #t = loader.get_template('ficha.html')
+    #c = Context({
+    #        })
+    #return HttpResponse(t.render(c))
+    c = {}
+    #c.update(csrf(request))
+    return render_to_response("ficha.html", c)
+
 
 
 def getEvento(request):
@@ -72,7 +78,7 @@ def getEvento(request):
             #Solo si se encontro la persona
             if persona.count() <= 0:
                 return HttpResponse('({"total":0,'\
-                            '"results":False})',  mimetype="text/plain", content_type="application/json")
+                            '"success":false})',  mimetype="text/plain", content_type="application/json")
                 
             #@TODO: Solo tomara la primera persona que calce con rut,
             persona = persona[0]
@@ -80,7 +86,9 @@ def getEvento(request):
             ficha = Ficha.objects.filter(persona=persona)
             if ficha.count() == 0:
                 return HttpResponse('({"total":0,'\
-                            '"results":False})',  mimetype="text/plain", content_type="application/json")
+                            '"success":false})', 
+                                    mimetype="text/plain", 
+                                    content_type="application/json")
             
             ficha = ficha[0]
             registro = Evento.objects.filter(ficha=ficha)
@@ -377,7 +385,7 @@ def putFicha(request):
 
     ficha.save()
     
-    return HttpResponse('{"success":true,"modificaciones":"'+campo_modificado +'" }', content_type='application/json')
+    return HttpResponse('({"success":true,"modificaciones":"'+campo_modificado +'" })', content_type='application/json')
 
 
 def putEventoEdit(request):
@@ -388,14 +396,14 @@ def putEventoEdit(request):
     rut_deudor = request.POST.get('rut_deudor',False)
 
     if valor == "":
-        return HttpResponse('{"success":"error","descripcion":"Ingreso vacio"}', 
+        return HttpResponse('({"success":false, "descripcion":"Ingreso vacio"})',
                             content_type='application/json')
     
         
     try:
         evento =  Evento.objects.get(id=id)
     except:
-        return HttpResponse('{"result":"error","descripcion":"no se encontro evento "}', 
+        return HttpResponse('({"success":false, "descripcion":"no se encontro evento "})', 
                             content_type='application/json')
     
     ficha = evento.ficha
@@ -476,7 +484,8 @@ def putEventoEdit(request):
 
     cambio.save()
     #return HttpResponse('{"result":"success","modificaciones":"'+campo_modificado +'" }', content_type='application/json')
-    return HttpResponse('{"success":true,"modificaciones":"'+campo_modificado +'" }', content_type='application/json')
+    return HttpResponse('({"success":true,"modificaciones":"'+campo_modificado +'" })', 
+                        content_type='application/json')
                         
 
 
@@ -924,17 +933,22 @@ def deleteEvento(request):
         data = '({ "success": true, "descripcion": " exitoso"})'
         try:
             evento = Evento.objects.get(id = id_evento)
-            #Verificar si el evento tiene gastos judiciales asociados
-            if evento.gasto_jucidial > 0:
-                ficha = evento.ficha
-                gastos_judicial = ficha.getGastoJudicial()
-                costas_totales = ficha.getCostasTotal()
-                if (costas_totales - evento.costas)  >  gastos_judicial:
-                    data = '({ "success": false, "descripcion": "El evento no puede ser eliminado por las costas pagadas "})'
-                else:
-                    evento.delete()
         except:
             data = '({ "success": false, "descripcion": "El registro ya fue eliminado "})'
+            return HttpResponse(data,
+                        content_type='application/json')
+            
+        #Verificar si el evento tiene gastos judiciales asociados
+        if evento.gasto_judicial > 0:
+            ficha = evento.ficha
+            gastos_judicial = ficha.getGastoJudicial()
+            costas_totales = ficha.getCostasTotal()
+            if (costas_totales - evento.costas)  >  gastos_judicial:
+                data = '({ "success": false, "descripcion": "El evento no puede ser eliminado por las costas pagadas "})'
+            else:
+                evento.delete()
+        #except:
+        #    data = '({ "success": false, "descripcion": "El registro ya fue eliminado "})'
 
     return HttpResponse(data,
                         content_type='application/json')
