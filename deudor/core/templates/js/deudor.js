@@ -188,10 +188,14 @@ Ext.onReady(function(){
 	{name: 'tribunal', type:'string', mapping:'fields.tribunal', convert: function(v) {return v ? v.fields.nombre : null;}},
 	{name: 'creado_por', type:'string', mapping:'extras.getNombreCreador' },
 	{name: 'deuda_inicial',type:'int',mapping:'fields.deuda_inicial'},
-        {name: 'deuda_actual',type:'int',mapping:'fields.deuda_actual'},
+        {name: 'deuda_actual',type:'int',mapping:'extras.getDeudaActual'},
+	{name: 'interes',type:'string',mapping:'fields.interes'},
 	{name: 'procurador_name',type:'string',mapping:'extras.getNombreProcurador'},
 	{name: 'procurador',type:'string',mapping:'extras.getIdProcurador'},
-	{name: 'sistema_origen',type:'string',mapping:'fields.sistema_origen' }
+	{name: 'sistema_origen',type:'string',mapping:'fields.sistema_origen' },
+	{name: 'capital_adeudado',type:'int',mapping:'extras.getCapitalFaltante'},
+	{name: 'costas_adeudado', type:'int',mapping:'extras.getGastoJudicialFaltante'},
+	{name: 'interes_adeudado',type:'int',mapping:'extras.getInteresFaltante'}
 			])
 	    });
 
@@ -746,11 +750,18 @@ Ext.onReady(function(){
 					    form: Ext.fly('frmDummy'),
 					    isUpload: true,
 					    success: function ( result, request) { 
-					    grid.getStore().remove(record);
-					    grid.getView().refresh();
+					      req_json = Ext.util.JSON.decode(result.responseText);
+					      if(req_json.success){
+						  grid.getStore().remove(record);
+						  grid.getView().refresh();
+					      }
+					      else{
+						  Ext.MessageBox.alert('Error', req_json.descripcion);
+						  evento_store.reload();
+					      }
 					},
 					    failure: function ( result, request) { 
-					    Ext.MessageBox.alert('Error', result.responseText); 
+					    Ext.MessageBox.alert('Error', result.descripcion); 
 					}
 				    });
 
@@ -921,24 +932,26 @@ Ext.onReady(function(){
 			    //busqueda de rut en ficha para saber la deuda inicial
 			    rec_idx = ficha_store.find('rut',rut);
 			    if (rec_idx != -1){
-				deuda_inicial = ficha_store.data.item(0).data.deuda_inicial;
-				accesso = false;
-				if (cod_abono != 143 &&
-				    cod_abono != 148){
-				    accesso = true;
-				}
+				deuda_inicial = ficha_store.data.item(rec_idx).data.deuda_inicial;
+				interes = ficha_store.data.item(rec_idx).data.interes;
+				accesso = true;
+				error_msg = '';
 				if ((cod_abono == 143 ||
 				     cod_abono == 148) && 
-				    deuda_inicial > 0){
-				    accesso = true;
-				}
+				    deuda_inicial == 0 ||
+				    interes == ""){
+				    accesso =false;
+				    if (interes == "")
+					error_msg ="Sin interes";
+				    if (deuda_inicial == 0)
+					error_msg ="Sin deuda inicial"
+					    }
 			        if (accesso){
 				    if (f.isValid()){			    
 					f.submit({
 						method:'POST',
 					        url:'putevento',
 						success: function(){
-					    //Ext.MessageBox.alert('Exitoso', 'Evento guardado');
 						registro_form.getForm().reset();
 					        registro_form.getForm().findField('rut_deudor').setValue(rut_deudor);
 					        registro_win.hide();
@@ -946,8 +959,8 @@ Ext.onReady(function(){
 					    //ficha_store.load();
 					},
 					    failure: function ( response, request) { 
-					    Ext.MessageBox.alert('Error', request.response.responseText);
-					    //Ext.MessageBox.alert('Error', 'Error en el servidor al guardar.');
+					    Ext.MessageBox.alert('Error', request.result.descripcion);
+		
                                             registro_form.getForm().reset();
 					}
 				    })
@@ -957,7 +970,7 @@ Ext.onReady(function(){
 			    }
 				}
 				else{
-				    Ext.MessageBox.alert('Error', 'Ficha sin deuda inicial');				    
+				    Ext.MessageBox.alert('Error', error_msg);
 				}
 					    }
 			}},
@@ -1077,8 +1090,8 @@ Ext.onReady(function(){
 				    }
 
 			   ,new Ext.form.Checkbox({
-				   boxLabel:'con tribunales?',
-				       name: '¿Con_tribunales',
+				   boxLabel:'Con tribunales?',
+				       name: 'con_tribunales',
 				       checked:false
 				       })
 			   
@@ -1394,7 +1407,8 @@ Ext.onReady(function(){
 					    url:'getinteres',
 					    success: function(result, request){
 					    req_json = Ext.util.JSON.decode(request.response.responseText);
-					    Ext.MessageBox.alert('Interes', req_json.interes);
+					    preview.getForm().findField('interes').setValue(req_json.interes);
+					    //Ext.MessageBox.alert('Interes', req_json.interes);
 					}})
 				    }
 			    else{
@@ -1621,8 +1635,24 @@ Ext.onReady(function(){
             width: 130,
         },
 	{
+	    fieldLabel: 'Capital Adeud.',
+	    name :'capital_adeudado',
+	    readOnly:'true'
+	},
+	{
 	    fieldLabel: 'Interes',
 	    name: 'interes'
+	    
+	},
+	{
+	    fieldLabel:'Interes adeud.',
+	    name:'interes_adeudado',
+	    readOnly:'true'
+	},
+	{
+	    fieldLabel: 'Costas Adeud.',
+	    name: 'costas_adeudado',
+	    readOnly: 'true'
 	}
 		    ]
         }
@@ -1644,7 +1674,6 @@ Ext.onReady(function(){
 			    if (f.isValid()){
 
 				rut = preview.getForm().findField('rut').value.split('-')[0].replace(/\./g,'');
-				//if (ficha_store.find('rut',rut) == -1){
 
 				f.submit({
 					method:'POST',

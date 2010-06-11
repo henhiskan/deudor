@@ -288,7 +288,8 @@ class Ficha(models.Model):
 
         interes_pagado = 0
         for evento in self.evento_set.all().order_by('fecha'):
-            interes_pagado = evento.interes
+            if evento.interes != None:
+                interes_pagado += int(evento.interes)
 
         return interes_pagado
 
@@ -316,6 +317,13 @@ class Ficha(models.Model):
             self.interes = self.getInteres()
             
         self.save()
+
+    def getDeudaActual(self):
+        """ Devuelva la suma de todos los items por pagar"""
+        return self.getInteresFaltante() +\
+            self.getCapitalFaltante() + \
+            self.getGastoJudicialFaltante()
+
 
 class FormaPago(models.Model):
     codigo = models.IntegerField()
@@ -349,9 +357,12 @@ class Evento(models.Model):
     capital = models.IntegerField(blank=True, null=True)
 
     abono = models.IntegerField(blank=True, null=True)
+    #Gasto Judicial registrado
     gasto_judicial = models.IntegerField(blank=True, null=True)
     honorario = models.IntegerField(blank=True, null=True)
     interes = models.IntegerField(blank=True, null=True)
+    #Gasto Judicial pagado ( la suma de todas la costas
+    # debiera dar lo que ha pagado)
     costas = models.IntegerField(blank=True, null=True)
 
     receptor = models.ForeignKey(Receptor, blank=True, null=True)

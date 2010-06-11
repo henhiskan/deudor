@@ -11,6 +11,7 @@ from django.db import connection
 from django.contrib.auth.models import User
 
 from core.models import *
+from settings import HONORARIO, HONORARIO_TRIB
 
 import pyExcelerator
 import tempfile
@@ -216,7 +217,14 @@ def getFicha(request):
          serializers.serialize('json', 
                                fichas[start:limit], 
                                indent=4, 
-                               extras=('getNombreCreador','getNombreProcurador','getRutDeudor','getIdProcurador',),
+                               extras=('getNombreCreador',
+                                       'getNombreProcurador',
+                                       'getRutDeudor',
+                                       'getIdProcurador',
+                                       'getCapitalFaltante',
+                                       'getGastoJudicialFaltante',
+                                       'getInteresFaltante',
+                                       'getDeudaActual',),
                                relations=({'procurador':{},'tribunal':{},'persona':{},'creado_por':{}})))
 
 
@@ -369,7 +377,7 @@ def putFicha(request):
 
     ficha.save()
     
-    return HttpResponse('{"success":"true","modificaciones":"'+campo_modificado +'" }', content_type='application/json')
+    return HttpResponse('{"success":true,"modificaciones":"'+campo_modificado +'" }', content_type='application/json')
 
 
 def putEventoEdit(request):
@@ -503,10 +511,7 @@ def putEvento(request):
     if request.method == "POST":
         rut_deudor = request.POST.get('rut_deudor',False)
         codigo_id = request.POST.get('codigo',False)
-
         forma_pago_codigo = request.POST.get('formapago_codigo',False)
-        abono = int(request.POST.get("abono",False))
-
         event_form = EventoForm(request.POST)
 
         if event_form.is_valid() and rut_deudor:
@@ -520,17 +525,26 @@ def putEvento(request):
             abono = request.POST.get('abono',False)
             if abono:
                 abono = int(abono)
-            #return HttpResponse('{success:true ,"descripcion":codigo }', content_type='application/json')
-            
+
+            con_tribunales = request.POST.get('con_tribunales',
+                                              False)
+            if con_tribunales:
+                honorario = abono - round(abono / HONORARIO_TRIB)
+            else:
+                honorario = abono - round(abono / HONORARIO)
+            abono = abono - honorario
+
             event.ficha = ficha
             event.codigo = codigo
-            
+            event.honorario = honorario
+
             #Desagregacion del Abono
             capital = ficha.getCapitalPagado()
             capital_faltante = ficha.getCapitalFaltante()
             
             #Pago de deuda inicial solo si este no se
             # a pagado anteriormente
+            data = ""
             if not ficha.estaCapitalPagado():
                 
                 if abono > capital_faltante:
@@ -542,32 +556,43 @@ def putEvento(request):
                     #Queda sin vuelto
                     abono = 0
 
-                #se empieza por pagar las costas (gastos judiciales)
-                #Solo si ya no se han pagado, y si queda abono
-                if abono > 0 and not ficha.estaGastoJudicialPagado():
-                    deuda_gasto = ficha.getGastoJudicialFaltante()
+            #se empieza por pagar las costas (gastos judiciales)
+            #Solo si ya no se han pagado, y si queda abono
+            gasto_jud_nuevo = 0
+            try:
+                gasto_jud_nuevo = int(event.gasto_judicial)
+            except:
+                pass
+            
+            if abono > 0:
+                deuda_gasto = ficha.getGastoJudicialFaltante() + gasto_jud_nuevo
 
-                    if abono > deuda_gasto:
-                        #Alcanza para pagar deuda completa
-                        event.costas =  deuda_gasto
-                        abono = abono - deuda_gasto
-                    else:
-                        #Solo se paga lo que alcance
-                        event.costas = abono
-                        abono = 0
+                if abono > deuda_gasto:
+                    #Alcanza para pagar deuda completa
+                    event.costas =  deuda_gasto
+                    abono = abono - deuda_gasto
+                else:
+                    #Solo se paga lo que alcance
+                    event.costas = abono
+                    abono = 0
 
-                #Luego se pagan los intereses si es que no se han 
-                #pagado y  si queda abono
-                if abono > 0 and not ficha.estaInteresPagado():
-                    interes_faltante = ficha.getInteresFaltante()
-                    if abono > interes_faltante:
-                        #Se paga todo el interes
-                        event.interes = interes_faltante
-                        abono = abono - interes_faltante
-                    else:
-                        #Solo se paga el interes que alcanza
-                        event.interes = abono
-                        abono = 0
+            #Luego se pagan los intereses si es que no se han 
+            #pagado y  si queda abono
+            #SOLO PARA DEBUG SE SETEA INTERES
+            interes_debug =0
+            if abono > 0 and not ficha.estaInteresPagado():
+                interes_faltante = ficha.getInteresFaltante()
+                if abono > interes_faltante:
+                    #Se paga todo el interes
+                    event.interes = interes_faltante
+                    abono = abono - interes_faltante
+                    interes_debug = interes_faltante
+                else:
+                    #Solo se paga el interes que alcanza
+                    event.interes = abono
+                    abono = 0
+                    interes_debug = event.interes
+                data = "Interes %s , Abono %s " % (interes_debug, abono )
 
             if forma_pago_codigo:
                 formapago = FormaPago.objects.get(codigo= forma_pago_codigo)
@@ -589,21 +614,23 @@ def putEvento(request):
 
             #Si el codigo fue "CERRAR FICHA", entonces 
             # se procede a cerrar la ficha
-            if codigo.descripcion == 'CERRAR FICHA':
+            if codigo.codigo_id == 165:
                 ficha.estado = '1'
                 ficha.save()
             
             #Si el codigo fue "INCOBRABLE", entonces
             # se procede a setear ese campo
-            if codigo.descripcion == 'INCOBRABLE':
+            if codigo.codigo_id == 166:
                 ficha.estado = '2'
                 ficha.save()
 
-            return HttpResponse()
+            msg = '({ "success": true, "descripcion": "%s" })' % (data)
+
+            return HttpResponse(msg, content_type='application/json')
 
         else:
             
-            data = '({ "success": false, "descripcion": %s })' % \
+            data = '({ "success": false, "descripcion": "%s" })' % \
                 (event_form.errors)
 
 
@@ -893,10 +920,23 @@ def deleteEvento(request):
 
     id_evento =  request.GET.get('id', False)
     if id_evento:
-        evento = Evento.objects.get(id = id_evento)
-        evento.delete()
-    
-    return HttpResponse()
+        data = '({ "success": true, "descripcion": " exitoso"})'
+        try:
+            evento = Evento.objects.get(id = id_evento)
+            #Verificar si el evento tiene gastos judiciales asociados
+            if evento.gasto_jucidial > 0:
+                ficha = evento.ficha
+                gastos_judicial = ficha.getGastoJudicial()
+                costas_totales = ficha.getCostasTotal()
+                if (costas_totales - evento.costas)  >  gastos_judicial:
+                    data = '({ "success": false, "descripcion": "El evento no puede ser eliminado por las costas pagadas "})'
+                else:
+                    evento.delete()
+        except:
+            data = '({ "success": false, "descripcion": "El registro ya fue eliminado "})'
+
+    return HttpResponse(data,
+                        content_type='application/json')
     
 
 def deleteFicha(request):
