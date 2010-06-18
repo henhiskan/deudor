@@ -695,13 +695,11 @@ Ext.onReady(function(){
 	  summaryRenderer: function(v, params, data){
 		return '$' + v ;
 	    }
-          /*
 	  ,editor: new Ext.form.NumberField({
 		  allowBlank: true,
 		  allowNegative: false,
 		  allowDecimals: false
 	      })
-          */
 	}
 
 	,{

@@ -251,9 +251,7 @@ def getCodigo(request):
         if usuario.get_perfil_display() == 'procurador':
             #los procuradores no pueden agregar pagos
             codigos = Codigo.objects.exclude(
-                Q(codigo_id=143) | Q(codigo_id=148) |
-                #los procuradores no pueden cerrar fichas 
-                Q(codigo_id=165) | Q(codigo_id=166)
+                Q(codigo_id=143) | Q(codigo_id=148)
                 )
 
     codigos = codigos.order_by('codigo_id')
@@ -937,11 +935,12 @@ def deleteEvento(request):
                         content_type='application/json')
             
         #Verificar si el evento tiene gastos judiciales asociados
-        if evento.gasto_judicial > 0:
+        if evento.gasto_judicial is not None and evento.gasto_judicial > 0:
             ficha = evento.ficha
             gastos_judicial = ficha.getGastoJudicial()
             costas_totales = ficha.getCostasTotal()
-            if (costas_totales - evento.costas)  >  gastos_judicial:
+            
+            if (costas_totales - evento.gasto_judicial)  >  gastos_judicial:
                 data = '({ "success": false, "descripcion": "El evento no puede ser eliminado por las costas pagadas "})'
             else:
                 evento.delete()
